@@ -1,0 +1,161 @@
+MANUF	FULL MODEL	MODEL	VAR/CONF/GEN/SER	CATEGORY	TYPE	SUB-TYPE	FIRE_MECH	CALIBER	BRL-LEN (in)	MIN-LEN  (in)	MAX-LEN  (in)	WEIGHT (lbs)	TRG-PULL	STOCK	GRIP	ACTION	TWIST	FS (mm)	RS (mm)	SR (mm)	CYCLIC ROF	EFF ROF	EFF-RNG-AREA (m)	EFF-RNG-PT (m)	MOA	FEED-SYS	FEED-LOC	STD-CAP	CLONE	NOTES
+Intratec	Tec-9 Mini	Tec-9 Mini		Pistol	SMG		SA	9x19	2.99	10.5	10.5	2.75	6	None	HG	blowback	1:10			196.85	1000			50		mag-well:btn-release:insert-lock	forward	16, 32		
+Ingram	M-11	M-11		Pistol	SMG		SA	.380 ACP, 9x19	5.08	9.76	20.9	3.5		Folding	HG	straight-blowback					1200			50		mag-well:btn-release:insert-lock	inside	25		
+MasterPiece Arms	M-10	M-10		Pistol	SMG		SA	9x19, .45 ACP	5.75	10.7	21.57	6.26		Folding	HG	straight-blowback					1200					mag-well:btn-release:insert-lock	inside	30		
+Navegar-Intratec	Tec-9 Mini	Tec-9 Mini		Pistol	SMG		SA	9x19	2.99	9.49	9.49	2.71	6	Folding	HG	blowback	1:10			196.85	1000			50		mag-well:btn-release:insert-lock	forward	16, 32		NEED TO CONFIRM THESE SPECS
+Beretta	92FS	92FS		Pistol			SA	9x19	4.9	8.5	8.5	2.08		N/A	HG	double/single, short-recoil	1:10		6.858	154.94	800	40				mag-well:btn-release:insert-lock	inside	10, 15	M9	cyclic ROF based on M9
+Beretta	92FS Inox	92FS	Inox	Pistol			SA	9x19	4.9	8.5	8.5	2.08		N/A	HG	double/single, short-recoil	1:10		6.858	154.94	800	40				mag-well:btn-release:insert-lock	inside	10, 15	M9	difference is slide/barrel material
+Beretta	M9	M9		Pistol			SA	9x19	4.9	8.5	8.5	2.08	5-13	N/A	HG	double/single, short-recoil	1:9.8		7.366	154.94	800			50		mag-well:btn-release:insert-lock	inside	10, 15		
+Beretta	Px4 Storm	Px4	Storm	Pistol			SA	9x19, .40, .45 ACP	3	6.2	6.2	1.69		N/A	HG	double/single, short-recoil	1:9.8							50		mag-well:btn-release:insert-lock	inside	9, 10		Estimated MV on gunsgunsguns.net, beretta-px4-storm-type-f-sub-compact table at high-end CorBon 125 gr
+Browning	HP-35	HP-35		Pistol			SA	9x19	4.63	7.75	7.75	2.2		N/A	HG	short-recoil, tilting-barrel	1:9.8					30	100	50		mag-well:btn-release:insert-lock	inside	13		also known as HP-35, HP, Hi Power
+Colt	1911A1	1911	A1	Pistol			SA	.45 ACP	5	8.5	8.5	2.44		N/A	HG	short-recoil, locked-breech	1:16	5.334				25	100	50		mag-well:btn-release:insert-lock	inside	7		fsh runs roughly  .170, .190, .210 estimated using .190
+Colt	Mustang	Mustang		Pistol			SA	.380 ACP	2.75	5.5	5.5	0.78	5.63	N/A	HG	locked-breech										mag-well:btn-release:insert-lock	inside	5, 6		
+Česká Zbrojovka	Cz 85	Cz 85		Pistol			SA	9x19, .40 S&W	4.49	8.11	8.11	2.2		N/A	HG	short-recoil, tilting-barrel										mag-well:btn-release:insert-lock	inside	16		
+FN Herstal	Five-SeveN	Five-SeveN		Pistol			SA	5.7x28	4.8	8.2	8.2	1.31	4.4-7.87	N/A	HG	delayed-blowback	1:9					40				mag-well:btn-release:insert-lock	inside	10, 20		
+FN Herstal	FNP-40	FNP	40	Pistol			SA	.40 S&W	4	7.4	7.4	1.67	5.5-7.7	N/A	HG		1:16							50		mag-well:btn-release:insert-lock	inside	14		
+Forjas Tauras	PT 24/7	PT 24/7		Pistol			SA	.40 S&W	4.25	7.13	7.13	1.74	6.5-7.5	N/A	HG		1:16									mag-well:btn-release:insert-lock	inside	17		
+Glock	17	17		Pistol			SA	9x19	4.49	8.03	8.03	1.38	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84									mag-well:btn-release:insert-lock	inside	17		
+Glock	17 Gen4	17	Gen4	Pistol			SA	9x19	4.49	8.03	8.03	1.38	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84									mag-well:btn-release:insert-lock	inside	17		
+Glock	19	19		Pistol			SA	9x19	4.02	7.36	7.36	1.32	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84	4.191	6.731	152						mag-well:btn-release:insert-lock	inside	15		
+Glock	19 Gen2	19	Gen2	Pistol			SA	9x19	4.02	7.36	7.36	1.32	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84	4.191	6.731	152						mag-well:btn-release:insert-lock	inside	15		
+Glock	19 Gen4	19	Gen4	Pistol			SA	9x19	4.02	7.36	7.36	1.32	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84	4.191	6.731	152						mag-well:btn-release:insert-lock	inside	15		
+Glock	20 SF	20	SF	Pistol			SA	10mm Auto	4.61	8.07	8.07	1.63	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:16									mag-well:btn-release:insert-lock	inside	10		
+Glock	21	21		Pistol			SA	.45 ACP	4.61	8.07	8.07	1.64	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:15.75									mag-well:btn-release:insert-lock	inside	13		
+Glock	21 SF	21	SF	Pistol			SA	.45 ACP	4.61	8.07	8.07	1.63	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:15.75									mag-well:btn-release:insert-lock	inside	13		
+Glock	22	22		Pistol			SA	.40 S&W	4.49	8.03	8.03	1.42	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84									mag-well:btn-release:insert-lock	inside	15		
+Glock	22 Gen4	22	Gen4	Pistol			SA	.40 S&W	4.49	8.03	8.03	1.42	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84									mag-well:btn-release:insert-lock	inside	15		
+Glock	23	23		Pistol			SA	.40 S&W	4.02	7.28	7.28	1.49	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84									mag-well:btn-release:insert-lock	inside	13		
+Glock	31	31		Pistol			SA	.357	4.49	8.03	8.03	1.45	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:16									mag-well:btn-release:insert-lock	inside	13		
+Glock	32	32		Pistol			SA	.357 SIG	4.02	7.36	7.36	1.37	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:16									mag-well:btn-release:insert-lock	inside	13		
+Glock	33	33		Pistol			SA	.357	3.43	6.42	6.42	1.23	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:16									mag-well:btn-release:insert-lock	inside	9		
+Glock	41	41		Pistol			SA	.45 ACP	5.31	8.78	8.78	1.49	5.4	N/A	HG	short recoil, locked breach, tilting barrel	1:15.75									mag-well:btn-release:insert-lock	inside	13		
+Glock	42	42		Pistol			SA	.380 ACP	3.25	5.94	5.94	.76	5.4	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84									mag-well:btn-release:insert-lock	inside	6		
+Glock	45	45		Pistol			SA	9x19	4.02	7.44	7.44	1.36	5.85	N/A	HG		1:9.84									mag-well:btn-release:insert-lock	inside	17		
+Heckler & Koch	USP Compact Tactical	USP Compact Tactical		Pistol			SA	.45	5.09	8.64	8.64	1.63	7.5	N/A	HG	short-recoil							100			mag-well:btn-release:insert-lock	inside	10, 12		threaded barrel for silencer
+Heckler & Koch	HK45	HK45		Pistol			SA	.45 ACP	4.46	8.03	8.03	1.95	7.5-8.5	N/A	HG	short-recoil, recoil-buffer	1:16									mag-well:btn-release:insert-lock	inside	10		
+Hi-Point Firearms	JHP	JHP		Pistol			SA	.45	4.5	7.75	7.75	2.19		N/A	HG		1:7									mag-well:btn-release:insert-lock	inside	9		
+Llama Firearms	XI-B	XI-B		Pistol			SA	9x19	4.34	7.88	7.88	2.31	7	N/A	HG											mag-well:btn-release:insert-lock	inside	8		
+Lorcin	L9	L9		Pistol			SA	9x19	4.5	7.75	7.75	1.93		N/A	HG									50		mag-well:btn-release:insert-lock	inside	10		
+Luger	P08	P08		Pistol			SA	9x19	3.9	8.74	8.74	1.92		N/A	HG	toggle-locked,short-recoil	1:9.8							50		mag-well:btn-release:insert-lock	inside	8		
+Makarov	Cz 82	Cz 82		Pistol			SA	9x18	3.8	6.8	6.8	1.75	4-10	N/A	HG	blowback, double-action	1:9.8							50		mag-well:btn-release:insert-lock	inside	12		
+Para-Ordnance	P14-45	P14	45	Pistol			SA	.45 ACP	5	8.5	8.5	2.42		N/A	HG	short-recoil	1:16	5.334				25	100	50		mag-well:btn-release:insert-lock	inside	14	1911	
+Remington	M1911	1911	M	Pistol			SA	.45	5	8.5	8.5	2.41		N/A	HG	short-recoil	1:16	5.334				25		50		mag-well:btn-release:insert-lock	inside	7	1911	
+Sig Sauer	P226	P226		Pistol			SA	9x19	4.49	7.7	7.7	2.13	3.09	N/A	HG	short-recoil, locked-breech	1:9.8							50		mag-well:btn-release:insert-lock	inside	10, 12, 15		based on 9x19 only
+Smith & Wesson	Model 459	Model 459		Pistol			SA	9x19	4	7.44	7.44	1.91		N/A	HG	recoil-operated										mag-well:btn-release:insert-lock	inside	14		
+Smith & Wesson	M&P	M&P		Pistol			SA	9x19, .40 S&W	4.25	7.6	7.6	1.74	6.5	N/A	HG	short-recoil, locked-breech										mag-well:btn-release:insert-lock	inside	15, 17		
+Smith & Wesson	Model 915	Model 915		Pistol			SA	9x19	4	7.38	7.38	1.78		N/A	HG											mag-well:btn-release:insert-lock	inside	15		
+Springfield Armory	XD	XD		Pistol			SA	9x19	4	7.2	7.2	1.63	4.71	N/A	HG		1:10									mag-well:btn-release:insert-lock	inside	16		based of compact model
+Springfield Armory	XD-M	XD	M	Pistol			SA	9x19	4.5	7	7	1.81	4.71	N/A	HG		1:10									mag-well:btn-release:insert-lock	inside	19		
+Stoeger	STLR-4	STLR-4		Pistol			SA	.22 LR	4.5	8.8	8.8	1.88		N/A	HG											mag-well:btn-release:insert-lock	inside	10		
+Sturm, Ruger & Co	MK II	MK II		Pistol			SA	.22	4.75	6.25	6.25	2.25		N/A	HG	blowback										mag-well:btn-release:insert-lock	inside	10		
+Sturm, Ruger & Co	MK III	MK III		Pistol			SA	.22 LR	4.75	9	9	2.2		N/A	HG	blowback	1:16									mag-well:btn-release:insert-lock	inside	10		
+Sturm, Ruger & Co	P85	P85		Pistol			SA	9x19	4.5	7.75	7.75	2	7.5	N/A	HG	short-recoil								50		mag-well:btn-release:insert-lock	inside	15		
+Sturm, Ruger & Co	P89	P89		Pistol			SA	9x19	4.5	7.75	7.75	2		N/A	HG	short-recoil										mag-well:btn-release:insert-lock	inside	15		
+Sturm, Ruger & Co	P95	P95		Pistol			SA	9x19	5.75	7.25	7.25	1.69	9	N/A	HG											mag-well:btn-release:insert-lock	inside	15		
+Sturm, Ruger & Co	P944	P944		Pistol			SA	.40 S&W	4.25	7.55	7.55	2.13		N/A	HG											mag-well:btn-release:insert-lock	inside	10		
+Sturm, Ruger & Co	LCP	LCP		Pistol			SA	.380 ACP	2.75	5.16	5.16	0.59	5	N/A	HG		1:6									mag-well:btn-release:insert-lock	inside	6, 7 		
+Sturm, Ruger & Co	SR9	SR9		Pistol			SA	9x19	4.14	7.55	7.55	1.66	6.7	N/A	HG		1:10									mag-well:btn-release:insert-lock	inside	17		
+Tauras	PT-809 E	PT-809	E	Pistol			SA	9x19	4	8.3	8.3	1.89	6-10	N/A	HG		1:10									mag-well:btn-release:insert-lock	inside	17		
+Walther	P22	P22		Pistol			SA	.22 LR	3.4	6.3	6.32	0.94	5-12	N/A	HG	blowback	1:16									mag-well:btn-release:insert-lock	inside	10		
+Walther	P99	P99		Pistol			SA	9x19	4	7.1	7.1	1.38	8.4	N/A	HG	short-recoil, locked-breech	1:16					30	100	50		mag-well:btn-release:insert-lock	inside	15		
+Walther	PP	PP		Pistol			SA	.380 ACP	3.9	6.7	6.7	1.43	4.75-12.25	N/A	HG	straight-blowback	1:16									mag-well:btn-release:insert-lock	inside	7		
+Walther	PPS	PPS		Pistol			SA	9x19	3.2	6.32	6.32	1.21	6.1	N/A	HG											mag-well:btn-release:insert-lock	inside	6, 7, 8		
+Röhm GmbH	RG10	RG10		Revolver			SA	.22 Short	2.87	6.6	6.8	0.78		N/A	HG											cylinder:eject-rod-all:manual-chmbr,spd-loader	forward	6		cannot find OAL specs on RG10, estimated using RG20
+Smith & Wesson	Model 29	Model 29		Revolver			SA	.44 Magnum, .44 Special	4	9.3	9.3	2.74	3.5-10	N/A	HG											cylinder:eject-rod-all:manual-chmbr,spd-loader	forward	6		
+Smith & Wesson	Model 36	Model 36		Revolver			SA	.38 S&W	1.88	6.94	6.94	1.22	7	N/A	HG		1:5									cylinder:eject-rod-all:manual-chmbr,spd-loader	forward	5		
+Smith & Wesson	500	500		Revolver			SA	.500 S&W Magnum	6.5	12.5	12.5	3.5	4.5	N/A	HG											cylinder:eject-rod-all:manual-chmbr,spd-loader	forward	5		multiple barrel lengths, lengths
+Cugir Arms Factory	WASR-10	WASR-10		Rifle	AKM	47	SA	7.62x39	16.39	34.25	34.25	7.5	7.03	Fixed	A2		1:10									mag-well:btn-release:insert-lock	forward	30		
+Kalashnikov Concerns	Saiga AK74	Saiga AK	74	Rifle	AKM	74	SA	5.45x39	16.3	36.5	36.5	7.3		Fixed, Folding	A2		1:7.68								2.5	mag-well:btn-release:insert-lock	forward	30		
+Norinco	56S	56S		Rifle	AKM	47	SA	7.62x39	16.3	34.75	34.75	8.38		Fixed, Folding	A2						650	40				mag-well:btn-release:insert-lock	forward	30		
+Norinco	MAK-90	MAK-90		Rifle	AKM	47	SA	7.62x39	16.3	35.1	35.1	8.25		Fixed	A2, TH											mag-well:btn-release:insert-lock	forward	30		
+Poly Technologies	AK-47S	AK-47S		Rifle	AKM	47	SA	7.62x39	16.38	34.38	34.38	8.2		Fixed, Folding	A2		1:9.45									mag-well:btn-release:insert-lock	forward	30		
+Zastava Arms	N-PAP DF M70	N-PAP DF M70		Rifle	AKM	47	SA	7.62x39	16.3	37	37	7.9		Fixed, Folding	A2		1:7									mag-well:btn-release:insert-lock	forward	30		some have a folding stock
+DPMS Panther	A-15	A-15		Rifle	AR	15	SA	.223, 5.56x45	20	37.25	40.5	7.75	5.5-8.5	Collapsible	A2		1:9									mag-well:btn-release:insert-lock	forward	30		
+Heckler & Koch	HK41	HK41		Rifle	AR	10	SA	.308, 7.62x51	19.7	42.5	42.5	10.9		Fixed	A2											mag-well:btn-release:insert-lock	forward	20		
+HM Defense	HM15F	HM15	Defender M5	Rifle	AR	15	SA	.223, 5.56x45	16	32.25	35.5	6.8	4.81	Collapsible	A2		1:8									mag-well:btn-release:insert-lock	forward	30		HM Defense aka Luxus Arms. Full Name is HM15F-MB-556 and model is Defender M5
+Israeli Military Industries	Uzi Carbine	Uzi	Carbine	Rifle	AW Carbine		SA	9x19	16.14	26	26	7.7		Folding	HG	blowback, open-bolt										mag-well:btn-release:insert-lock	forward	25		
+LMT	LM308MWS	LM308MWS		Rifle	AR	10	SA	.308, 7.62x51	16	35	38	9.98		Collapsible	A2	gas-impingement	1:10									mag-well:btn-release:insert-lock	forward	20		
+Sturm, Ruger & Co	SR-762	SR	762	Rifle	AR	10	SA	.308, 7.62x51	16.12	34.75	38	8.6	4.5	Collapsible	A2	gas-operated, rotating-bolt	1:10								2.47	mag-well:btn-release:insert-lock	forward	25		trigger pull based on 2016/2016 models
+Anderson Arms	AM15	AM15		Rifle	AR	15	SA	.223, 5.56x45	16	32.5	36.25	6.2	5.5-8.5	Collapsible	A2	gas-operated	1:8									mag-well:btn-release:insert-lock	forward	30		
+Anderson Arms	AM15 Pistol	AM15	Pistol	Pistol	AR	15	SA	.223, 5.56x45	7.5	24	24	4.9		None	A2		1:7									mag-well:btn-release:insert-lock	forward	30		
+Bushmaster	XM15	XM15		Rifle	AR	15	SA	.223, 5.56x45	20	32.5	38.25	8.27	7-8	Collapsible	A2	gas-operated, direct impingement	1:8					45	800	550		mag-well:btn-release:insert-lock	forward	30		
+Bushmaster	XM15-E2S	XM15	E2S	Rifle	AR	15	SA	.223, 5.56x45	16		36.25	6.7	7-8	Collapsible	A2	gas-operated, direct impingement, rotating-bolt	1:9									mag-well:btn-release:insert-lock	forward	30		XM15 Carbine aka Patrolman?�s Rifle
+Christensen Arms	CA-15	CA-15		Rifle	AR	15	SA	.223, 5.56x45	16		32.5	6.6	3.5-4.5	Collapsible	A2	gas-operated, direct impingement	1:8									mag-well:btn-release:insert-lock	forward	30		
+Colt	M4	M4		Rifle	AR	15	SA	.223, 5.56x45	16.1	32	35.5	6.5	5.5-9.5	Collapsible	A2	gas-operated	1:7	60.071	68.04	381						mag-well:btn-release:insert-lock	forward	30		
+Colt	SP1	SP1		Rifle	AR	15	SA	.223, 5.56x45	20	39	39	6.1		Fixed	A2		1:12	58.039								mag-well:btn-release:insert-lock	forward	30	M16	FAWB Compliant
+Daniel Defense	DDM4 V11	DDM4	V11	Rifle	AR	15	SA	.223, 5.56x45	16	32.25	35.88	6.28		Collapsible	A2		1:7									mag-well:btn-release:insert-lock	forward	30		
+Daniel Defense	M4A1	M4A1		Rifle	AR	15	SA	.223, 5.56x45	16	31.5	34.75	6.74		Collapsible	A2		1:7									mag-well:btn-release:insert-lock	forward	30		actual barrel length is 14.5 but with permanent attached flash suppressor it comes to 16in
+DPMS Panther	Classic 16	Classic 16		Rifle	AR	15	SA	.223, 5.56x45	20	37.25	40.5	7.75		Collapsible	A2		1:9									mag-well:btn-release:insert-lock	forward	30		
+FN Herstal	FN15	FN15		Rifle	AR	15	SA	.223, 5.56x45	16	31.9	35.2	6.94	4.75-7.75	Collapsible	A2	gas-operated, direct impingement	1:7									mag-well:btn-release:insert-lock	forward	30		
+IWI	Tavor	Tavor		Rifle	AR	15	SA	.223, 5.56x45	18.1	25.2	28.3	7	11	Fixed	A2	long-stroke, rotating-bolt	1:7									mag-well:btn-release:insert-lock	behind	30		bullpup, can be converted to 9x19, .300, has varied barrel lengths based on model series
+LMT	Defender 2000	Defender	2000	Rifle	AR	15	SA	.223, 5.56x45	16	33	36	7.9		Collapsible	A2	gas-operated, direct impingement	1:7									mag-well:btn-release:insert-lock	forward	30		
+LWRC International	M6 IC	M6	IC	Rifle	AR	15	SA	.223, 5.56x45	16	33.5	36.5	7.2	5.5-7.5	Collapsible	A2		1:7									mag-well:btn-release:insert-lock	forward	30		
+Noveske	N4	N4		Rifle	AR	15	SA	.223, 5.56x45	16.1	28.5	31.75	6.19		Collapsible	A2		1:7									mag-well:btn-release:insert-lock	forward	30		actual barrel length is 14.5 but with permanent attached flash, suppressor it comes to 16in. had to estimate oal
+POF-USA	P-15	P-15		Rifle	AR	15	SA	.223, 5.56x45	16.5	32	35.35	6.7	4.5	Collapsible	A2	short-stroke,gas-piston	1:8									mag-well:btn-release:insert-lock	forward	30		
+Sig Sauer	MCX	MCX		Rifle	AR	15	SA	.223, 5.56x45, .300 AAC Blackout	16	29	35.7	5.84		Collapsible	A2	short-stroke, gas-operated, gas-piston, rotating-bolt	1:7				800			503		mag-well:btn-release:insert-lock	forward	30		
+Smith & Wesson	M&P 15	M&P 15		Rifle	AR	15	SA	.223, 5.56x45	16	35	35	6.45	6	Collapsible	A2		1:8									mag-well:btn-release:insert-lock	forward	30		
+Smith & Wesson	M&P 15 Sport	M&P 15	Sport	Rifle	AR	15	SA	.223, 5.56x45	16	35	35	6.45	6	Collapsible	A2		1:8									mag-well:btn-release:insert-lock	forward	30		
+Smith & Wesson	M&P 15 Sport II	M&P 15	Sport II	Rifle	AR	15	SA	.223, 5.56x45	16	35	35	6.45	6	Collapsible	A2		1:9									mag-well:btn-release:insert-lock	forward	30		
+Sturm, Ruger & Co	AR-556	AR-556		Rifle	AR	15	SA	.223, 5.56x45	16.1	32.75	35.5	6.5	7-10	Collapsible	A2	direct-impement	1:8									mag-well:btn-release:insert-lock	forward	30		
+Sturm, Ruger & Co	AR-556 Pistol	AR-556	Pistol	Pistol	AR	15	SA	.223, 5.56x45	10.5	25.3	27.9	6.2	7-10	Brace	A2		1:8									mag-well:btn-release:insert-lock	forward	30		
+Sturm, Ruger & Co	SR-556	SR-556		Rifle	AR	15	SA	.223, 5.56x45	16.12	32.75	36	7.1		Collapsible	A2	piston	1:7									mag-well:btn-release:insert-lock	forward	30		
+ArmaLite	AR-7	AR-7		Rifle	Carbine		SA	.22 LR	16	35	35			Fixed	MC	blowback								100		mag-well:btn-release:insert-lock	forward	8		developed by eugene stoner but not an ?�AR??firearm
+Hi-Point Firearms	995	995		Rifle	Carbine		SA	9x19, .40 S&W, 10mm Auto, .45 ACP, .380 ACP	16.5	32.5	32.5	5.75		Fixed	A2											mag-well:btn-release:insert-lock	forward	10		
+Browning	A-Bolt Target	A-Bolt	Target	Rifle			BA	.223 Remington, .308 Winchester, .300 WMS	28	47.75	47.75	13	3-6	Fixed	MC		1:10					15		1000		mag-well-floor:det-hinge-floor:insert-floor	internal	3		uniqued detachable mag that is ?�attached??to a hinged floor. trigger pull can be adjusted with allen wrinch
+Marlin	Model 60	Model 60		Rifle	Carbine		SA	.22 LR	22	40.5	40.5	5.5		Fixed	MC	direct-blowback						30				int-tube:rm-tube-plngr:manual-btm	internal	15		
+Marlin	Model 336A	Model 336	A	Rifle			LA	.30-30 Winchester, .35 Remington	24	38.5	38.5	7		Fixed	MC		1:10									int-tube:cycle-action:manual-feed-rmp	internal	5, 6		estimated specs based on generic models, multiple variations have varying specs
+Marlin	Model 336C	Model 336	C	Rifle			LA	.30-30 Winchester, .35 Remington	20	42.5	42.5	7		Fixed	MC		1:10									int-tube:cycle-action:manual-feed-rmp	internal	5, 6		estimated specs based on generic models, multiple variations have varying specs
+Marlin	Model 795	Model 795		Rifle	Carbine		SA	.22 LR	18	37	37	4.5	6.75	Fixed	MC		1:16									mag-well:btn-release:insert-lock	internal	10, 25		
+Norinco	SKS Type 56	SKS	Type 56	Rifle	Carbine		SA	7.62x39	20.62	40.16	40.16	8.5		Fixed	MC	short-stroke, gas-operated, tilting-bolt	1:9.449	31.75				35				int-box:drop-floor:manual-top,stripper-clip	forward	10		a 1:240 mm  twist rate
+Kalashnikov Concerns	Saiga	Saiga		Rifle	Carbine		SA	7.62x39	16.3	35	35	7.9		Fixed	MC	gas-operated, rotating-bolt								500		mag-well:btn-release:insert-lock	forward	20		
+Remington	597	597		Rifle	Carbine		SA	.22 LR, .22 WMR	16.5	34.75	34.75	5.84		Fixed	MC		1:16									mag-well:lvr-release:insert-lock	forward	8, 10		mag capacity depends on .22 LR (10-rnd) or .22 WMR (8-rnd)
+Remington	700 ADL	700	ADL	Rifle	Carbine		BA	6mm Remington	24	43.63	43.63	7	3.5	Fixed	MC		1:10									int-blind:hinge-floor:manual-top	internal	3, 4, 5		
+Remington	Model 742	Model 742		Rifle	Carbine		SA	.30-06	18.5	39.5	39.5	7.5		Fixed	MC		1:10									mag-well:lvr-release:insert-lock	forward	4		
+Savage Arms	Mark II	Mark II		Rifle	Carbine		BA	.22 LR	21	39.5	39.4	6	5.7	Fixed	MC		1:16									mag-well:lvr-release:insert-lock	forward	10		
+Sturm, Ruger & Co	10/22	10/22		Rifle	Carbine		SA	.22 LR, .22 WMR	18.5	37	37	5	6	Fixed	MC		1:16									mag-well-rot:lvr-release:insert-lock	forward	10, 16		.17 availabe in 10/17 .22 WMR available in 10/22 Magnum 
+Sturm, Ruger & Co	M77	M77		Rifle	Carbine		BA	.22-250 Remington	22	42	42	6.75		Fixed	MC		1:14									int-blind:hinge-floor:manual-top	internal	4		
+Sturm, Ruger & Co	Mini-14	Mini-14		Rifle	Carbine		SA	.223, 5.56x45	18.5	38	38	7		Fixed	MC		1:9									mag-well:btn-release:insert-lock	forward	20		Some can only fire .223
+Sturm, Ruger & Co	Model 44	Model 44		Rifle	Carbine		SA	.44 Remington Magnum	18.25	36.75	36.75	5.75	6	Fixed	MC	gas-operated, rotating-bolt										int-tube:rel-sng-btm:manual-btm	internal	4		does not really fit defined feed-system codes
+Tula	SKS Type 45	SKS	Type 45	Rifle	Carbine		SA	7.62x39	20.62	40.16	40.16	8.5		Fixed	MC	short-stroke, gas-operated, tilting-bolt	1:7.874	31.75				35				mag-well:btn-release:insert-lock	forward	10		in actuallty, it is 1:200 in mm
+Universal	M1	M1		Rifle	Carbine		SA	.30 Carbine	18	35.58	35.58	5		Fixed	MC		1:20							270		mag-well:btn-release:insert-lock	forward	15		
+Benelli Armi SpA	M4 Super 90	M4 Super 90		Shotgun	single-barrel		SA	12-gauge	18.5	35	35	8.42		Collapsible	A2	gas-operated, rotating-bolt							140	50		int-tube:rel-sng-btm:manual-feed-rmp	internal	5		
+Browning	BPS	BPS		Shotgun	single-barrel		PA	12-gauge	26	46.75	46.75	7.69		Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	4		
+Ithaca Gun Company	Model 37	Model 37		Shotgun	single-barrel		PA	12-gauge, 20-gauge	18.5	39.5	39.5	6.7		Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	5, 8		specifications vary depending on gauge and variants
+Mossberg	500	500		Shotgun	single-barrel		PA	12-gauge, 20-gauge, .410-bore	28	47.5	47.5	7.5		Fixed	MC								50	40		int-tube:rel-sng-btm:manual-btm	internal	2, 8		
+Mossberg	500 Cruiser	500 Cruiser		Shotgun	single-barrel		PA	12-gauge	18.5	31	31	5.75		N/A	A2											int-tube:rel-sng-btm:manual-btm	internal	6, 8		
+Mossberg	590	590		Shotgun	single-barrel		PA	12-gauge	20	41	41	7.75		Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	9		
+Mossberg	Maverick 88	Maverick 88		Shotgun	single-barrel		PA	12-gauge	28	47.75	47.75	7		Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	6		
+Mossberg	Maverick 88 Security	Maverick 88	Security	Shotgun	single-barrel		PA	12-gauge	18.5	39.5	39.5	6.25		Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	5		
+Remington	870	870		Shotgun	single-barrel		PA	12-gauge, 16-gauge, 20-gauge, 28-gauge, .410-bore	14	26.3	26.3	7		Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	3, 4, 5, 6, 7		
+Remington	870 Express	870	Express	Shotgun	single-barrel		PA	12-gauge, 16-gauge, 20-gauge, 28-gauge, .410-bore	14	26.3	26.3	7		Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	3, 4, 5, 6, 7		
+Remington	Sportsman 48	Sportsman	48	Shotgun	single-barrel		SA	12-gauge, 16-gauge, 20-gauge, 28-gauge, .410-bore	28	48	48	8.25		Fixed	MC	recoil-operated										int-tube:rel-sng-btm:manual-feed-rmp	internal	2, 4		
+Savage Arms	67	67		Shotgun	single-barrel		PA	12-gauge	18.5	30	30			Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	4		Cannot find accurate specifications
+Savage Arms	67H	67H		Shotgun	single-barrel		PA	12-gauge	18.5	30	30			Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	5		Cannot find accurate specifications
+Savage Arms	Stevens 311D	Stevens 311	D	Shotgun	double-barrel		SS	12-gauge	28	36	36	7		Fixed	MC											barrel:break-open:manual-brl		2		
+JC Higgins	Model 60	Model 60		Shotgun	single-barrel		SA	12-gauge	26.25	46.25	46.25	8		Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	5		Based on ?�Deluxe?? other versions are comparable w/in a few inches of OAL, barrel and lbs for weight
+Winchester	1200	1200		Shotgun	single-barrel		PA	12-gauge, 16-gauge, 20-gauge	18.5	36.93	36.93	6.5		Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	4, 6		
+Winchester	1300	1300		Shotgun	single-barrel		PA	12-gauge	18	39.5	39.5	6.7		Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	4, 5, 7		
+Winchester	1300 Defender	1300	Defender	Shotgun	single-barrel		PA	12-gauge	18	39.5	39.5	6.7		Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	4, 5, 7		
+Colt	Competition	Competition		Pistol			SA							N/A	HG											mag-well:btn-release:insert-lock	inside			
+Hi-Point Firearms	CF-380	CF-380		Pistol			SA							N/A	HG											mag-well:btn-release:insert-lock	inside			
+Colt	New Agent Series 90	New Agent	Series 90	Pistol			SA							N/A	HG											mag-well:btn-release:insert-lock	inside			
+Norinco	NP44	NP44		Pistol			SA	.45 ACP	5	8.5	8.5	2.44		N/A	HG	short-recoil, locked-breech	1:16	5.334				25	100	50		mag-well:btn-release:insert-lock	inside	7	1911	
+OMC	AMT Backup	AMT Backup		Pistol			SA							N/A	HG											mag-well:btn-release:insert-lock	inside			
+Sig Sauer	P232	P232		Pistol			SA	.380 ACP						N/A	HG											mag-well:btn-release:insert-lock	inside			
+Smith & Wesson	SW99	SW99		Pistol			SA	9x19						N/A	HG											mag-well:btn-release:insert-lock	inside			
+Tauras	PT92	PT92		Pistol			SA	9x19						N/A	HG											mag-well:btn-release:insert-lock	inside			
+Röhm GmbH	RG31	RG-31		Revolver			SA	.38 Special						N/A	HG											cylinder:eject-rod-all:manual-chmbr,spd-loader				
+Smith & Wesson	342 AirLite Ti	342 AirLite Ti		Revolver			SA	.38						N/A	HG											cylinder:eject-rod-all:manual-chmbr,spd-loader				
+Smith & Wesson	642-2	642	2	Revolver			SA	.38						N/A	HG											cylinder:eject-rod-all:manual-chmbr,spd-loader				
+Smith & Wesson	M19	M19		Revolver			SA	.357						N/A	HG											cylinder:eject-rod-all:manual-chmbr,spd-loader		6		
+Sturm, Ruger & Co	Security Six	Security Six		Revolver			SA	.357						N/A	HG											cylinder:eject-rod-all:manual-chmbr,spd-loader				
+POF-USA	P-308	P-308		Rifle	AR	10	SA	.308																		mag-well:btn-release:insert-lock				
+Sig Sauer	SIG716	SIG716		Rifle	AR	10	SA	.308																		mag-well:btn-release:insert-lock				
+JR Enterprises	LRP-07	LRP-07		Rifle	AR	15	SA	.223, 5.56x45	16			11		Collapsible	A2	gas-operated, direct impingement	1:7									mag-well:btn-release:insert-lock		30		
+Remington	141	141		Rifle	Carbine		LA	.35																		int-tube:cycle-action:manual-feed-rmp	internal	5		
+Sturm, Ruger & Co	American	American		Rifle	Carbine		BA	.308																						
+Smith & Wesson	Model 500	Model 500		Shotgun			PA	12-gauge																						
+Kalashnikov Concerns	Saiga-12	Saiga-12		Shotgun	single-barrel		SA	12-gauge, 20-gauge, .410-bore																		mag-well:btn-release:insert-lock				
+Buddie Arms	Double Deuce	Double Deuce		Derringer	double-barrel		SS	.22 Short	2.875	5.5	5.5			N/A	BH											barrel:break-open:manual-brl		2		Estimate ranges
+Israeli Military Industries	Uzi	Uzi		Pistol	SMG		SA	9x19, .22 LR, .45 ACP	10.2	17	25	7.7		Folding		blowback, open-bolt	1:10.25				1200					mag-well:btn-release:insert-lock		32		
+Daniel Defense	DD5V1	DD5V1		Rifle	AR	15	SA	.308, 7.62x51																		mag-well:btn-release:insert-lock				
