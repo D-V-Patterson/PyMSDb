@@ -37,7 +37,7 @@ from pymsdb import PyMSDbException
 # Air density from : see http://www.wind101.net/air-density/air-density-calculator.htm
 # atmospheric found in ICAO pages
 # Coriolis effect is apx 2*pi / 24*3600 (radians/sec)
-G      = 9.807     # acceleration of gravity (m/s^2)
+G      = 9.80665   # acceleration of gravity (m/s^2)
 BARP   = 101.325   # barametric pressure (kPa)
 ALT    = 0.0       # sea level (m)
 TEMP   = 15        # temperature (C)

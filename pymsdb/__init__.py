@@ -14,10 +14,24 @@ Requirements
  - Python 3.x
 
 External Dependencies
- - regex 2.5.93 https://bitbucket.org/mrabarnett/mrab-regex (pip3 install regex)
- - numpy 1.20.3 https://numpy.org (pip3 install numpy)
- - scipy 1.6.3 https://www.scipy.org (pip3 install scipy)
- - matplotlib 3.4.2 https://matplotlib.org (pip3 install matplotlib
+ - regex 2.5.93
+    https://bitbucket.org/mrabarnett/mrab-regex
+    pip3 install regex
+ - numpy 1.20.3
+    https://numpy.org
+    pip3 install numpy
+ - numpy-quaternion 2021.4.5.14.42.35
+    https://pypi.org/project/numpy-quaternion/
+    pip3 install numpy-quaternion
+ - numba 0.53.1
+    http://numba.pydata.org
+    pip3 intall numba
+ - scipy 1.6.3
+    https://www.scipy.org
+    pip3 install scipy
+ - matplotlib 3.4.2
+    https://matplotlib.org
+    pip3 install matplotlib
 
 Usage
  - add a .pth file to /usr/lib/python3/dist-packages with the full path of PyMSDb
@@ -38,6 +52,7 @@ class PyMSDbException(Exception):
     def __init__(self,msg): super().__init__(msg)
 
 """
+POINT MASS
 from importlib import reload
 import numpy as np
 import pymsdb.ballistics as bls
@@ -56,4 +71,5 @@ cal2=cals.get_caliber('5.56x45')
 blt2=cal2.blt_idx(0)
 cal4=cals.get_caliber('9x19')
 blt4=cal4.blt_idx(3)
+
 """

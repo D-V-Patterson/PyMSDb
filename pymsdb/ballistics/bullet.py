@@ -12,7 +12,7 @@ Defines caliber dataset reading/writing and the Caliber class
 
 #__name__ = 'bullet'
 __license__ = 'GPLv3'
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 __date__ = 'June 2021'
 __author__ = 'Dale Patterson'
 __maintainer__ = 'Dale Patterson'
@@ -26,6 +26,7 @@ import pymsdb.ballistics as bls
 import pymsdb.ballistics.force as force
 import pymsdb.ballistics.model as model
 import pymsdb.ballistics.atmosphere as atm
+import pymsdb.utils as utils
 from pymsdb import PyMSDbException
 from pymsdb.ballistics.anthropometry import S_H, W_HM
 
@@ -34,13 +35,12 @@ class BulletException(PyMSDbException):
 
 """
 TODO: 
- 3. take a look at Boatright
- 4. See also Miller for barrel-twist related equations
- 5. in addition to tof, elevation, add velocity at range x
+  3. take a look at Boatright
+  5. in addition to tof, elevation, add velocity at range x
    velocity at range x (using k3) is off by 100 m/s (low) for 7.62 but other 
    estimates tof, elevation, zero angle and fall angle compare favorably to 
    trajectory results
- 6. See above, also add range when given angle of fire
+  6. See above, also add range when given angle of fire
   7. trajectory could become unwieldy with multiple parameters: could use
    dicts such as
    firearm = {height,front-sight height,barrel len,barrel,twist,angle of fire}
@@ -63,6 +63,7 @@ TODO:
     axis
  14. Need to verify Cl and Cma - both of these return numbers > 1 wheras other
   coefficients are all < 1
+ 15. add option to set/configure windage angle
 """
 
 class Bullet(object):
@@ -120,7 +121,7 @@ class Bullet(object):
         :param v: muzzle velocity (m/s)
         :param cg: charge (gr)
         :param mdl: drag model to use (currently only G1 or G7) if None set
-          based on type of bullet (handgun vs longgun)
+          based on type of bullet (G1 for handgun vs G7 for long gun)
         :return: a Bullet object
 
         In addition to initialized parameters, also creates internal variables
@@ -643,7 +644,7 @@ class Bullet(object):
         vx = self._vx_k3_(x,theta)
         vx0 = self._vx_i_(theta)
         t = self.tof(x,theta)
-        return h + (x*bls.tan(theta,'d')) - (0.5*atm.G*np.power(t,2)) * \
+        return h + (x*utils.tan(theta)) - (0.5*atm.G*np.power(t,2)) * \
                ((1 + (2*np.sqrt(vx/vx0)))/3)
 
     def fall_angle(self,x,theta):
@@ -665,9 +666,9 @@ class Bullet(object):
         vx = self._vx_k3_(x,theta)
         vx0 = self._vx_i_(theta)
         t = self.tof(x,theta)
-        tanp = bls.tan(theta,'d') - ((atm.G*t)/vx0) * \
+        tanp = utils.tan(theta) - ((atm.G*t)/vx0) * \
                ((1/3) * (1 + np.sqrt(vx0/vx) + vx0/vx))
-        return bls.r2d(bls.arctan(tanp))
+        return utils.r2d(utils.arctan(tanp,'r'))
 
     def trajectory(self,dt=0.01,maxd=np.inf,h=S_H,tr=None,theta=0.,th=W_HM,vw=None):
         """
@@ -841,7 +842,7 @@ class Bullet(object):
             v0 = initial velocity (m/s), and
             R = twist rate
         """
-        self._vv0 = np.array([self._vx_i_(theta),self._vy_i_(theta),0.],np.double)
+        self._vv0 = self._vcomp_i_(theta)
         self._vv = self._vv0.copy()
         self._p0 = (2*np.pi*self._v0)/tr
         self._update_vi_(np.linalg.norm(self._vv))
@@ -860,25 +861,46 @@ class Bullet(object):
         self._vi = v
         self._pi = self._p0 * np.cbrt(self._vi/self._v0)
 
-    def _vx_i_(self,theta,vi=None):
+    def _vcomp_i_(self,theta=0.,phi=0.):
+        """
+        calculates the 3d components of current velocity w/ angle of fire theta
+        and windage angle phi
+        :param theta: angle of fire (degrees)
+        :param phi: angle of fire along the z-axis (windage)
+        :return: the components of velocity as a array [vx,vy,vz]
+        """
+        return np.array(
+            [self._vx_i_(theta,phi),self._vy_i_(theta,phi),self._vz_i_(phi)],
+            np.double
+        )
+
+    def _vx_i_(self,theta,phi=0.):
         """
         calculates the x component of current velocity at angle of fire theta
+        and windage angle phi
         :param theta: angle of fire (degrees)
-        :param vi: override current velocity
+        :param phi: angle of fire along the z-axis (windage)
         :return: the x component of current velocity
         """
-        if vi is None: vi = self._vi
-        return vi*bls.cos(theta,'d')
+        return self._vi*utils.cos(theta)*utils.cos(phi)
 
-    def _vy_i_(self,theta,vi=None):
+    def _vy_i_(self,theta,phi=0.):
         """
         calculates the y component of current velocity at angle of fire theta
+        and windage angle phi
         :param theta: angle of fire (degrees)
-        :param vi: override current velocity
+        :param phi: angle of fire along the z-axis (windage)
         :return: the y component of current velocity
         """
-        if vi is None: vi = self._vi
-        return vi*bls.sin(theta,'d')
+        return self._vi*utils.sin(theta)*utils.cos(phi)
+
+    def _vz_i_(self,phi=0):
+        """
+        calculates the z component of current velocity at windage angle phi
+        :param phi: angle of fire along the z-axis (windage)
+        :return: the z component of current velocity
+        """
+        return self._vi*utils.sin(phi)
 
     def _za_k_(self,fs,x):
         """
@@ -928,8 +950,10 @@ class Bullet(object):
         dv = self._v0/v_x
         _1 = np.power(dv-1,-1)
         _2 = np.power(dv-1,-2) * np.log(dv)
-        za = bls.arctan((fs*bls.MM2M+(0.5*atm.G*np.power(t,2)) * (0.5+_1-_2))/x)
-        return v_x,t,bls.r2d(za)
+        za = utils.arctan(
+            (fs*bls.MM2M+(0.5*atm.G*np.power(t,2)) * (0.5+_1-_2))/x,'r'
+        )
+        return v_x,t,utils.r2d(za)
 
     def _k3_(self):
         """

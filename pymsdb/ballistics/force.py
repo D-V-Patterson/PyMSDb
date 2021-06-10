@@ -42,7 +42,7 @@ def Fd(blt,rho=atm.RHO):
 	"""
 	 calculates the force of drag (Fd) given projectiles drag coefficient,
 	 cross-sectional area, velocity and air density
-	:param blt: the Caliber object
+	:param blt: Bullet object
 	:param rho: air density (kg/m3)
 	:return: numpy array of the 3d components of the Fd = Force of Drag
 	uses Fd = (-0.5 * Cd * V_x * vv * rho * A) / mass
@@ -62,10 +62,10 @@ def mFd(blt,rho=atm.RHO):
 	"""
 	 calculates the force of drag (Fd) magnitude given projectiles drag coefficient,
 	 cross-sectional area, velocity and air density
-	:param blt: the Caliber object
+	:param blt: the Bullet object
 	:param rho: air density (kg/m3)
 	:return: magnitude of the force of drag
-	uses Fd` = (-0.5 * Cd * rho * A) / mass
+	uses Fd = (-0.5 * Cd * rho * A) / mass
 	 McCoy 1999, Eq 5.7
 	 where
 	  Cd = coefficient of drag,

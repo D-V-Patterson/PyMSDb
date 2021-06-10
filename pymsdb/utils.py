@@ -30,6 +30,91 @@ def is_int(s):
     except ValueError:
         return False
 
+# degree/radian/minute of angle(moa)
+def d2m(d): return d*60.0             # degrees to MOA
+def d2r(d): return d*np.pi/180.0      # degrees to radians
+def r2d(r): return r*180.0/np.pi      # radians to degrees
+def r2m(r): return r*60.0*180.0/np.pi # radians to MOA
+def m2d(m): return m/60.0             # MOA to degrees
+def m2r(m): return m/60.0*np.pi/180.0 # MOA to radians
+
+# hack trigonometry fcts to return 0. rather than very small number for certain
+# degrees i.e. sin of 180 degrees
+
+# all trig fcts expect values in radians but have built-in convert-from parameter
+# where convert-from is one of {'r':radians i.e. do nothing,'d'=degrees.'m'=moa}
+# TODO:
+#  is there a better way of setting elements to 0
+def cos(x,m='d'):
+    if m == 'd': x = d2r(x)
+    elif m == 'm': x = m2r(x)
+    x = np.cos(x)
+    z = np.isclose(x,0.)
+    if isinstance(z,np.ndarray):
+        if np.any(z):
+            for i,zi in enumerate(z):
+                if zi: x[i] = 0.
+    elif z: x = 0.
+    return x
+
+def sin(x,m='d'):
+    if m == 'd': x = d2r(x)
+    elif m == 'm': x = m2r(x)
+    x = np.sin(x)
+    z = np.isclose(x,0.)
+    if isinstance(z,np.ndarray):
+        if np.any(z):
+            for i,zi in enumerate(z):
+                if zi: x[i] = 0.
+    elif z: x = 0.
+    return x
+
+def tan(x,m='d'):
+    if m == 'd': x = d2r(x)
+    elif m == 'm': x = m2r(x)
+    x = np.tan(x)
+    z = np.isclose(x, 0.)
+    if isinstance(z,np.ndarray):
+        if np.any(z):
+            for i,zi in enumerate(z):
+                if zi: x[i] = 0.
+    elif z: x = 0.
+    return x
+
+def arccos(x,m='d'):
+    if m == 'd': x = d2r(x)
+    elif m == 'm': x = m2r(x)
+    x = np.arccos(x)
+    z = np.isclose(x, 0.)
+    if isinstance(z,np.ndarray):
+        if np.any(z):
+            for i,zi in enumerate(z):
+                if zi: x[i] = 0.
+    elif z: x = 0.
+    return x
+
+def arcsin(x,m='d'):
+    if m == 'd': x = d2r(x)
+    elif m == 'm': x = m2r(x)
+    x = np.sin(x)
+    z = np.isclose(x, 0.)
+    if np.any(z):
+        for i, zi in enumerate(z):
+            if zi: x[i] = 0.
+    return x
+
+def arctan(x,m='d'):
+    if m == 'd': x = d2r(x)
+    elif m == 'm': x = m2r(x)
+    x = np.tan(x)
+    z = np.isclose(x, 0.)
+    if isinstance(z,np.ndarray):
+        if np.any(z):
+            for i,zi in enumerate(z):
+                if zi: x[i] = 0.
+    elif z: x = 0.
+    return x
+
 def percent_change(old,new): return (new-old) / old * 100
 
 def lobf(ts):
@@ -43,6 +128,7 @@ def lobf(ts):
     [m,b] = np.polyfit(xs,ys,1)
     return [(x,y) for x,y in zip(np.array(xs),np.array(xs)*m+b)]
 
+# TODO: the below need work
 def ema(xs,p=5):
     """
     exponential moving average
