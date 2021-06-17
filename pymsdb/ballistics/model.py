@@ -26,6 +26,8 @@ from pymsdb import PyMSDbException
 """
  TODO:
   1. tangent vs secant ogival volumes/centers of gravity
+   a. G1 ogival radius is calculated with tangent ogive formula (are G1 tangent?)
+     see Crowell 1996 for conical nose cone definition
 """
 
 # MODELS
@@ -43,131 +45,28 @@ list of the drag models (NOTE: only G1 and G7 are currently used)
 models = ['Ingalls','G1','G2','G5','G6','G7','G8','GL']
 imodels = ['G1','G7'] # implemented models
 
-def geometry(blt):
-    """
-     estimates bullet measurements based on bullet's length & std model ratios
-    :param blt: Bullet object
-    :return: tuple t = (
-        ttl-volume (mm^3),
-        base-diameter (mm),
-        ogive-len (mm),
-        cylinder-len (mm),
-        frustum-len (mm)
-        )
-    NOTE;
-     bullet must have diameter, bullet length and bullet model configured
-    """
-   # from the bullet length & diameter, estimate other measurements
-    bl = blt.blt_len
-    d = blt.d
-    mspec = mdl_specs[blt.mdl]
-
-    # estimate lengths of ogive, cylinder, and frustum (if present)
-    lo = np.round(mspec['ogv-len'] * bl,3)
-    lc = np.round(mspec['cyl-len'] * bl,3)
-    lf = np.round(mspec['frs-len'] * bl,3) if mspec['frs-len'] else 0.
-    db = np.round(mspec['base-dia'] * d,3)
-
-    # we need the radius of the cylinder and frustum
-    rc = d / 2  # cylinder radius
-    rf = db / 2 # frustum radius
-
-    # estimate the volume of the bullet by summing the volume of its parts
-    # for cylinder and frustum (google equations)
-    #  Vc = pi*r^2*h where r=cylinder radius and h = cylinder length
-    #  Vf = 1/3 * pi * (h*r1^2 + (r1*r2) + r2^2)
-    #   where
-    #    h = frustum length
-    #    r1 = radius of frustum base
-    #    r2 = radius of frustum top
-    vc = np.round(np.pi*np.power(rc,2)*lc,3)
-    vf = (np.pi*lf)/3 * (np.power(rc,2) + (rc*rf) + np.power(rf,2))
-
-    # the ogival volume is more complicated
-    # see http://www.if.sc.usp.br/~projetosulfos/artigos/NoseCone_EQN2.PDF
-    # (use wayback machine 11-Apr-2001 capture to download it) pg 12
-    # calculate p and p^2
-    #  p = (R^2 + L^2)/2R
-    #   where
-    #    R = radius of the base of the ogive (use rc)
-    #    L = length of the ogive (lo)
-    #
-    # and then for the volume
-    #  Vo = pi*(L*p^2) - L^3/3 - (p-R)p^2sin^-1(L/p))
-    #  where
-    #   p is calculated above,
-    #   L = ogive length (lo)
-    #   R = ogive base radius (rc)
-    # TODO: is this different for secant vice tanget ogive
-    p = (np.power(rc,2)+np.power(lo,2)) / (2*rc)
-    p2 = np.power(p,2) # calculate once
-    vo = np.pi*(lo*p2 - np.power(lo,3)/3 - (p-rc)*p2*np.arcsin(lo/p))
-
-    # add the constituent volumes
-    vol = np.round(vo + vc + vf,3)
-
-    # estimate the center of gravity
-    # Requires the cog for the cylinder, the frustum and the ogive as well as
-    # the weights of each of these
-    # CGcylinder = l/2
-    #  where
-    #   l = length of cylinder
-    CGc = lc / 2
-
-    # CGfrustum = l/4 * (rf^2 + 2*(rf*rc) + 3*rc^2)/(rf^2+rf*rc + rc^2))
-    #  where
-    #   l = length of frustum (or height),
-    #   rf = radius of frustum (top of frustum), and
-    #   rc = radius of cylinder (bottom of frustum)
-    rf2 = np.power(rf,2)
-    rc2 = np.power(rc,2)
-    CGf = (lf/4) * (rf2 + 2*rf*rc + 3*rc2) / (rf2 + rf*rc + rc2)
-
-    # TODO:
-    #  calculating ogival cog requires integration
-    #  y(x) = sqrt(r^2 - x^2) + yi 0 <= x <= lo
-    #  r = diameter/4 + length^2/diameter
-    #  yi = diameter/2 - r
-    #  then if the ogive has constant density,
-    #   y(x)(x-xcg)dx = 0 and solve for xcg
-    # We will estimate using this equation from a forum
-    # (http://www.craftsclassic.com/7_928f8ada4e2c3123_1.htm)
-    CGo = (0.3479 + 0.0122*np.power(d/lo,2)) * lo
-
-    # estimate the weights (we are using weight and mass interchangeably) -
-    # requires the mean density of the bullet: density = mass / volume
-    # w(cyl) = pi * rc^2* lc * density
-    # w(frs) = 1/3 * pi * lf * (rb^2 + rb*r * r^2) * density
-    # w(ogv) = w(bullet) - w(cyl) - w(frs)
-    #  where
-    #   rc = the radius of the bullet,
-    #   lc = length of the cylinder,
-    #   lf = length of the frustum, and
-    #   rb = radius of the base (top of frustum)
-    p = blt.mass / vol
-    wc = (np.pi * rc2 * lc) * p
-    wf = (1/3 * np.pi * lf * (rf2 + rf * rc + rc2)) * p
-    wo = blt.mass - wc - wf
-
-    # using https://www.grc.nasa.gov/www/k-12/rocket/rktcg.html
-    cog = np.round((wf*CGf + wc*(CGc + lf) + wo*(CGo + lf + lc))/blt.mass,3)
-
-    return vol,db,cog,lo,lc,lf
-
 """
  defines standard model ratios to define bullet specs
  each model is a dict with keys
+  ogv-shp = ogival shape one of {conical,tangent,secant,blunt}
   ogv-len = ratio of ogive-len/bullet-len
+  ogv-r = ogival radius
   cyl-len = the ratio of cylinder-len/blt-len
+  frs-shp = one of {boattail,none}
   frs-len = the ratio of frustrum-len/blt-len (if present)
-  rrs-dia = diameter of the 'top' of the frustum
+  frs-base = diameter of the 'bottom' of the frustum
   measurements are from 
-   https://www.alternatewars.com/BBOW/Ballistics/Ext/Drag_Tables.htm
-  TODO: use the above to get G2 and other reference numbers 
+   https://www.alternatewars.com/BBOW/Ballistics/Ext/Drag_Tables.htm 
 """
 
-# measurements in calibers (Cl) 1Cl = 0.254mm of each standard model bullet
-STD_OAL = 0 # overal length (OAL)
+# measurements in calibers (Cl) 1 Cl = 0.254mm of each standard model bullet
+OGV_CON = 0 # conical ogive
+OGV_TAN = 1 # tangent ogive
+OGV_SEC = 2 # secant ogive
+OGV_BLT = 3 # blunt nosed
+FRS_NNE = 0 # no frustum
+FRS_BTL = 1 # boattail
+STD_OAL = 0 # overal length (OABL)
 STD_LO  = 1 # length of ogive
 STD_LT  = 2 # length of ogive throat (0. if not present) NOTE: incl in ogive len
 STD_LC  = 3 # length of cylinder
@@ -183,43 +82,60 @@ G5_SHPE = np.array([4.29,2.1,0.,1.7,0.49,1.,0.842,0.,6.19,7.5],np.double)
 G6_SHPE = np.array([4.81,2.53,0.,2.28,0.,1.,1.,0.,6.99,0.],np.double)
 G7_SHPE = np.array([4.23,2.18,0.,1.45,0.6,1.,0.842,0.,10.,7.5],np.double)
 G8_SHPE = np.array([3.64,2.18,0.,1.46,0.,1.,1.,0.,10.,0.],np.double)
-# TODO: add ogive and frustum degrees
 mdl_specs = {
     'G1':{
-        'ogv-len':np.round(G1_SHPE[STD_LO]/G1_SHPE[STD_OAL],3),
-        'cyl-len':np.round(G1_SHPE[STD_LC]/G1_SHPE[STD_OAL],3),
-        'frs-len':np.round(G1_SHPE[STD_LF]/G1_SHPE[STD_OAL],3),
-        'base-dia':G1_SHPE[STD_DB],
+        'ogv-shp':OGV_TAN,
+        'ogv-len':G1_SHPE[STD_LO]/G1_SHPE[STD_OAL],
+        'ogv-r':G1_SHPE[STD_RO]/G1_SHPE[STD_LO],
+        'cyl-len':G1_SHPE[STD_LC]/G1_SHPE[STD_OAL],
+        'frs-shp':FRS_NNE,
+        'frs-len':G1_SHPE[STD_LF]/G1_SHPE[STD_OAL],
+        'frs-base':G1_SHPE[STD_DB],
     },
     'G2':{
-        'ogv-len':np.round(G2_SHPE[STD_LO]/G2_SHPE[STD_OAL],3),
-        'cyl-len':np.round(G2_SHPE[STD_LC]/G2_SHPE[STD_OAL],3),
-        'frs-len':np.round(G2_SHPE[STD_LF]/G2_SHPE[STD_OAL],3),
-        'base-dia':G2_SHPE[STD_DB],
+        'ogv-shp':OGV_CON,
+        'ogv-len':G2_SHPE[STD_LO]/G2_SHPE[STD_OAL],
+        'ogv-r':G2_SHPE[STD_RO]/G2_SHPE[STD_LO],
+        'cyl-len':G2_SHPE[STD_LC]/G2_SHPE[STD_OAL],
+        'frs-shp':FRS_BTL,
+        'frs-len':G2_SHPE[STD_LF]/G2_SHPE[STD_OAL],
+        'frs-base':G2_SHPE[STD_DB],
     },
     'G5':{
-        'ogv-len':np.round(G5_SHPE[STD_LO]/G5_SHPE[STD_OAL],3),
-        'cyl-len':np.round(G5_SHPE[STD_LC]/G5_SHPE[STD_OAL],3),
-        'frs-len':np.round(G5_SHPE[STD_LF]/G5_SHPE[STD_OAL],3),
-        'base-dia':G5_SHPE[STD_DB],
+        'ogv-shp':OGV_TAN,
+        'ogv-len':G5_SHPE[STD_LO]/G5_SHPE[STD_OAL],
+        'ogv-r': G5_SHPE[STD_RO] / G5_SHPE[STD_LO],
+        'cyl-len':G5_SHPE[STD_LC]/G5_SHPE[STD_OAL],
+        'frs-shp':FRS_BTL,
+        'frs-len':G5_SHPE[STD_LF]/G5_SHPE[STD_OAL],
+        'frs-base':G5_SHPE[STD_DB],
     },
     'G6':{
-        'ogv-len':np.round(G6_SHPE[STD_LO]/G6_SHPE[STD_OAL],3),
-        'cyl-len':np.round(G6_SHPE[STD_LC]/G6_SHPE[STD_OAL],3),
-        'frs-len':np.round(G6_SHPE[STD_LF]/G6_SHPE[STD_OAL],3),
-        'base-dia':G6_SHPE[STD_DB],
+        'ogv-shp':OGV_SEC,
+        'ogv-len':G6_SHPE[STD_LO]/G6_SHPE[STD_OAL],
+        'ogv-r':G6_SHPE[STD_RO]/G6_SHPE[STD_LO],
+        'cyl-len':G6_SHPE[STD_LC]/G6_SHPE[STD_OAL],
+        'frs-shp':FRS_NNE,
+        'frs-len':G6_SHPE[STD_LF]/G6_SHPE[STD_OAL],
+        'frs-base':G6_SHPE[STD_DB],
     },
     'G7':{
-        'ogv-len':np.round(G7_SHPE[STD_LO]/G7_SHPE[STD_OAL],3),
-        'cyl-len':np.round(G7_SHPE[STD_LC]/G7_SHPE[STD_OAL],3),
-        'frs-len':np.round(G7_SHPE[STD_LF]/G7_SHPE[STD_OAL],3),
-        'base-dia':G7_SHPE[STD_DB],
+        'ogv-shp':OGV_TAN,
+        'ogv-len':G7_SHPE[STD_LO]/G7_SHPE[STD_OAL],
+        'ogv-r':G7_SHPE[STD_RO]/G7_SHPE[STD_LO],
+        'cyl-len':G7_SHPE[STD_LC]/G7_SHPE[STD_OAL],
+        'frs-shp':FRS_BTL,
+        'frs-len':G7_SHPE[STD_LF]/G7_SHPE[STD_OAL],
+        'frs-base':G7_SHPE[STD_DB],
     },
     'G8':{
-        'ogv-len':np.round(G8_SHPE[STD_LO]/G8_SHPE[STD_OAL],3),
-        'cyl-len':np.round(G8_SHPE[STD_LC]/G8_SHPE[STD_OAL],3),
-        'frs-len':np.round(G8_SHPE[STD_LF]/G8_SHPE[STD_OAL],3),
-        'base-dia':G8_SHPE[STD_DB],
+        'ogv-shp':OGV_SEC,
+        'ogv-len':G8_SHPE[STD_LO]/G8_SHPE[STD_OAL],
+        'ogv-r':G8_SHPE[STD_RO]/G8_SHPE[STD_LO],
+        'cyl-len':G8_SHPE[STD_LC]/G8_SHPE[STD_OAL],
+        'frs-shp':FRS_NNE,
+        'frs-len':G8_SHPE[STD_LF]/G8_SHPE[STD_OAL],
+        'frs-base':G8_SHPE[STD_DB],
     },
 }
 

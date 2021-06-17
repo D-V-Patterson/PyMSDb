@@ -96,17 +96,19 @@ def arccos(x,m='d'):
 def arcsin(x,m='d'):
     if m == 'd': x = d2r(x)
     elif m == 'm': x = m2r(x)
-    x = np.sin(x)
+    x = np.arcsin(x)
     z = np.isclose(x, 0.)
-    if np.any(z):
-        for i, zi in enumerate(z):
-            if zi: x[i] = 0.
+    if isinstance(z,np.ndarray):
+        if np.any(z):
+            for i,zi in enumerate(z):
+                if zi: x[i] = 0.
+    elif z: x = 0.
     return x
 
 def arctan(x,m='d'):
     if m == 'd': x = d2r(x)
     elif m == 'm': x = m2r(x)
-    x = np.tan(x)
+    x = np.arctan(x)
     z = np.isclose(x, 0.)
     if isinstance(z,np.ndarray):
         if np.any(z):

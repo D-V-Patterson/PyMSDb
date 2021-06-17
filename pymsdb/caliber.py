@@ -94,7 +94,7 @@ class CaliberDS(object):
                 key = None
                 try:
                     key = row[CAL_NAME]
-                    self._cs[key] = Caliber(key,row,'G1',update)
+                    self._cs[key] = Caliber(key,row,update=update)
                     self._ks.append(key)
                     self._short_names.append(self._cs[key].short_name)
                     self._family.append(self._cs[key].family)
@@ -138,7 +138,7 @@ class CaliberDS(object):
     def get_caliber(self,cal): return self._cs[self.find_name(cal)]
 
 class Caliber(object):
-    def __init__(self,key,row,mdl='G1',update=False):
+    def __init__(self,key,row,mdl=None,update=False):
         """
         Create a Caliber object with name key, and data in row
         :param key: name of caliber
@@ -146,13 +146,17 @@ class Caliber(object):
         :param update: if true will update calculable data i.e. muzzle energy,
          momentum
         """
-        # initialize record (dict of values read in from roww)
+        # initialize record (dict of values read in from row)
         self._rs = {}
         self._name = key
-        self._mdl = mdl
 
         # the below are used for calculating trajectory
         self._process_row_(row,update)
+
+        # set model based on bullet type (if not specified in parameters)
+        if mdl is None:
+            self._mdl = 'G1' if self._rs['firearm-cd'] == 'H' else 'G7'
+        else: self._mdl = mdl
 
     def __str__(self):
         """

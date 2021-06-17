@@ -56,6 +56,7 @@ POINT MASS
 from importlib import reload
 import numpy as np
 import pymsdb.ballistics as bls
+import pymsdb.utils as utils
 import pymsdb.ballistics.model as model
 import pymsdb.ballistics.force as force
 import pymsdb.ballistics.atmosphere as atm

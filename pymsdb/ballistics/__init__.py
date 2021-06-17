@@ -40,6 +40,9 @@ GR2KG   = 6.47989e-5 # grains to kilograms
 IN2MM   = 25.4       # inches to millimeter
 IN2CM   = 2.54       # inches to centimeters
 
+# caliber to metric
+CL2M = 2.54e-4
+
 # metric conversions
 MM2CM   = 0.1    # mm to cm
 MM2M    = 0.001  # mm to m

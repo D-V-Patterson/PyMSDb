@@ -12,7 +12,7 @@ Defines caliber dataset reading/writing and the Caliber class
 
 #__name__ = 'bullet'
 __license__ = 'GPLv3'
-__version__ = '0.1.4'
+__version__ = '0.1.5'
 __date__ = 'June 2021'
 __author__ = 'Dale Patterson'
 __maintainer__ = 'Dale Patterson'
@@ -104,11 +104,15 @@ class Bullet(object):
 
     Bullets measurements are
      d = diameter at widest portion of body
-     db = base diameter, diameter of boattial = d if otherwise sometimes called
-      the end diameter
+     db = base diameter = diameter of boattail. If there is no boattail, this
+      will = d sometimes called end diameter
+     oal = (Overall length) is the length of the round from the tip of the cone
+      to the end of the cartridge
+     oabl = (Overall bullet length) is the length of the bullet the tip of the cone
+      to the base of the boattail (or base of the cylinder if there is no boattail)
     """
 
-    def __init__(self,name,cd,sz,d,clen,blen,w,v,cg,mdl=None):
+    def __init__(self,name,cd,sz,d,clen,blen,w,v,cg,mdl):
         """
          initialize bullet
         :param name: string name of caliber
@@ -127,14 +131,17 @@ class Bullet(object):
         In addition to initialized parameters, also creates internal variables
          _m = <double> mass (kg) by converting w in gr to kg
          _t = <double> 'current' time (s)
+         _t = <double> 'current' time (s)
          _vi = <double> 'current' velocity at time _t (m/s)
-         _vv = <3D vector> velocity components (m/s) at time _t on the x,y,z axis
-         _vp = <3D vector> positions (m) at time _t on the x,y,z axis
+         _vv = <3D vector> 'current' velocity components (m/s) on the x,y,z axis
+         _vp = <3D vector> 'current' position (m) on the x,y,z axis
          _p0 = <double> initial spin rate (radians/s) defined in Lahti 2019 eq 1
          _pi = <double> current spin rate (radians/s) defined in Lahti 2019 eq 2
          _vol = <double> estimated volume of the bullet
          _db = <double> base diameter (for bullets with frustums else db = d)
          _xcg = <double> bullet's x-axis center of gravity (dist. from base) (mm)
+         _Ix = <double> bullet's axial moment of inertia (kg-m^2)
+         _Iy = <double> bullet's transverse moment of inertia (kg-m^2)
          _ts = <list of tuples> steps for iteration where each
            tuple t = (Time,current velocity,position vector,velocity vector)
         """
@@ -143,8 +150,8 @@ class Bullet(object):
         self._cd = cd
         self._sz = sz
         self._d = np.double(d)
-        self._clen = np.double(clen)
-        self._blen = np.double(blen) if blen else None
+        self._oal = np.double(clen)
+        self._oabl = np.double(blen) if blen else None
         self._v0 = np.double(v)
         self._w = w
         self._cg = cg
@@ -155,6 +162,8 @@ class Bullet(object):
         self._db = None
         self._vol = None
         self._xcg = None
+        self._Ix = None
+        self._Iy = None
         self._t = 0.
         self._vi = None
         self._vp = None # at time t = i
@@ -164,13 +173,9 @@ class Bullet(object):
         self._p0 = None # spin rate at time t = 0
         self._pi = None # spin rate at time t = i
         self._ts = []
-        self.reset()
 
-        # finally set the model which will get bullet's volume, frustum base
-        # (if present) and center of gravity # use G7 for long guns and G1 for
-        # handguns
-        if mdl is None:
-            mdl = 'G1' if self._cd == 'H' else 'G7'
+        # reset the bullet and set the model
+        self.reset()
         self.mdl = mdl
 
     def reset(self):
@@ -219,10 +224,7 @@ class Bullet(object):
                 "{}: invalid 'drag model' ({})".format(self._name,mdl)
             )
         self._mdl = mdl
-        vol,db,cog,_,_,_ = model.geometry(self)
-        self._vol = vol
-        self._db = db
-        self._xcg = cog
+        self._mass_props_()
 
     @property
     def pos(self): return self._vp
@@ -276,7 +278,7 @@ class Bullet(object):
     def d(self): return self._d
 
     @property
-    def blt_len(self): return self._blen
+    def oabl(self): return self._oabl
 
     @property
     def charge(self): return self._cg
@@ -285,10 +287,13 @@ class Bullet(object):
     def db(self): return self._db
 
     @property
-    def case_len(self): return self._clen
+    def oal(self): return self._oal
 
     @property
     def xcg(self): return self._xcg # x-dimension of center of gravity
+
+    @property
+    def volume(self): return self._vol
 
 #### OUTPUT
 
@@ -504,7 +509,7 @@ class Bullet(object):
         """
         M = self.mach()
         if M > 2.5: M = 2.5
-        return (M/2 - 1) * (self._blen/(4*self._db)) * (self._xcg/self._d)
+        return (M/2 - 1) * (self._oabl/(4*self._db)) * (self._xcg/self._d)
 
     def Cd0(self):
         """
@@ -520,7 +525,7 @@ class Bullet(object):
         """
         M = self.mach()
         div = np.sqrt(M) if M >= 1. else 3
-        return np.sqrt(self._d/self._blen) / div
+        return np.sqrt(self._d/self._oabl) / div
 
     def Cn(self):
         """
@@ -537,9 +542,9 @@ class Bullet(object):
         NOTE: will nan if bullet length is unknown
         """
         M = self.mach()
-        if M < 1: return np.sqrt(self._blen/self._d)*(self._db/self._d)
+        if M < 1: return np.sqrt(self._oabl/self._d)*(self._db/self._d)
         else:
-            return np.sqrt(M)*np.sqrt(self._blen/self._d)*(self._db/self._d)
+            return np.sqrt(M)*np.sqrt(self._oabl/self._d)*(self._db/self._d)
 
 #### FIRING METHODS
 
@@ -585,24 +590,15 @@ class Bullet(object):
         #    front sight post
         # 4) in the event that the resulting angle does not give of us a
         #    final destination close to 0, recalculate
+        # TODO: can't use fill_value='extrapolate', look at extrap1d
         try:
             phis = np.linspace(0,self._za_k_(fs,x)[2],num=1000)
             zs = interp1d(self.elevation(x,fs*bls.MM2M,phis),phis)
             za = float(zs(fs*bls.MM2M))
-        except ValueError:
-            # assuming caused by za = float(zs(fs*bls.MM2M))
+        except ValueError: # assuming caused by za = float(zs(fs*bls.MM2M))
             raise BulletException(
                 "{}: Interpolation error. Try resetting bullet".format(self._name)
             )
-        if not np.isclose(0.0,self.elevation(x,0,za)):
-            # should be unecessary but since the k3 is estimated off of the
-            # the initial velocity instead of the velocity at range x, za
-            # may be off. For now, run trajectory with the found za to use the
-            # resulting velocity in calculations
-            self.trajectory(theta=za)
-            zs = interp1d(self.elevation(x,fs*bls.MM2M,phis),phis)
-            za = float(zs(fs*bls.MM2M))
-            self.reset()
         return za
 
     def tof(self,x,theta):
@@ -741,7 +737,6 @@ class Bullet(object):
         # set up max distance
         maxd = int(self._ts[-1][2][0] // inc * inc)
 
-        # if there is no firing angle use the estimated zero angle
         cnt = 0
         fout = None
         try:
@@ -999,8 +994,8 @@ class Bullet(object):
         :return: the acceleration vector (m/s)
         uses McCoy 1999, eqs 8.3, 8.4 & 8.5
          va_x = mFd * V~ * (v_x - w_x)
-         va_y = mFd * V~ * (v_x - w_x) - g
-         va_z = mFd * V~ * (v_x - w_x)
+         va_y = mFd * V~ * (v_y - w_y) - g
+         va_z = mFd * V~ * (v_z - w_z)
          where
           mFd = is magnitude of force,
           v~ is the scalar magnitude of the vector velocity (i.e. vi) see eq 8.6
@@ -1053,3 +1048,233 @@ class Bullet(object):
             raise BulletException(
                 "{}: Invalid 'mach number' ({})".format(self.name, m)
             )
+
+    def _mass_props_(self):
+        """
+         estimates mass properties of the bullet based on bullet's length &
+         std model ratios
+         NOTE: Requires that bullet has a known diameter, length and drag model
+        """
+        # Given the OABL and drag model, estimate ogival, body & frustum lengths,
+        # the frustum base diameter and the ogival radius - throw exception of
+        # any model
+        # that is not a tanget ogive as these are not calculate yet
+        mspec = model.mdl_specs[self._mdl]
+        if mspec['ogv-shp'] != model.OGV_TAN:
+            raise BulletException(
+                "{}: Ogive Volume for ({}) not implemented".format(
+                    self.name,mspec['ogv-shp']
+                )
+            )
+        lo = mspec['ogv-len'] * self._oabl
+        lc = mspec['cyl-len'] * self._oabl
+        lf = mspec['frs-len'] * self._oabl
+        self._db = mspec['frs-base'] * self._d
+        ro = mspec['ogv-r'] * lo
+
+        # get radii of components (Note for do not confuse the ogival radius ro
+        # (above) with the radius of the nose's base which = the body radius
+        rc = self._d / 2  # cylinder/ogive base radius
+        rf = self._db / 2  # frustum base radius
+
+        # estimate the volume, center of gravity and moments of inertia
+        # 1. VOLUME estimate bullet volume by summing constituent volumes
+        # equations for cylinder & frustum volumes can be googled
+        #  Vc = pi*r^2*h where r=cylinder radius and h = cylinder length
+        #  Vf = 1/3 * pi * (h*r1^2 + (r1*r2) + r2^2)
+        #   where
+        #    h = frustum length
+        #    r1 = radius of frustum base
+        #    r2 = radius of frustum top
+        # The ogival volume is more complicated, requiring additional parameters
+        #  f, the ogival head radius of curvature and nbl the non-dimensional
+        #  ballistic length as defined in Seglates 2019 Fig. 2 and Eq. 1
+        #  f = Rogive/R
+        #  nbl = sqrt(2*f-1)
+        #  where
+        #   Rogive = ogival radius
+        #   R = radius of  base of ogive
+        # From these, the ogive volume in Seglates 2019, Eq. 2 (tangent ogives)
+        #  Vogive/R^3 = pi * (f^2 - 1/3nbl^2 - f^2*(f-1)*sin^-1(nbl/f))
+        #   where f and nbl are defined above
+        vc = np.pi * np.power(rc,2) * lc
+        vf = (np.pi*lf)/3 * (np.power(rc,2) + (rc*rf) + np.power(rf,2))
+        f = ro / rc
+        nbl = np.sqrt(2*f-1)
+        vo_r3 = np.pi*( # used to calculate ogive's center of gravity
+                (np.power(f,2) - np.power(nbl,2)/3)*nbl -
+                (np.power(f,2)*(f-1)*utils.arcsin(nbl/f,'r'))
+        )
+        vo = vo_r3 * np.power(rc,3)  # complete equation to get ogive volume
+        self._vol = vo + vc + vf
+
+        # 2. Center of Gravity - center of gravity (CG) of the bullet is measured
+        # from the base of the bullet on the centerline such that in the 3d space
+        # of the bullet (x,y,z), the cg is (Xcg,0,0)
+
+        # As in the case of volume, CG is calcuated by summing the CG for the
+        # consituent compoents and is 'simple' for the body and frustum but more
+        # complex for the ogive. However, see
+        #  https://www.grc.nasa.gov/www/k-12/rocket/rktcg.html
+        # we cannot simply add the consituent CGs but must consider the the weights
+        # of each component as well such that the CG of the bullet is defined
+        #  CGb*Wb = sum(Di*Wi)
+        #  where
+        #   CGb = center of gravity of bullet,
+        #   Wb = weight of bullet,
+        #   Di = distance of component i from a reference line
+        #   Wi = weight of component i
+        # equation for cylinder at
+        #  https://engineersfield.com/centre-gravity-centroid-areas-equilibrium/
+        # equation for frustum at
+        #  https://archive.lib.msu.edu/crcmath/math/math/c/c581.htm
+        # CGcylinder = l / 2
+        # CGfrustum = l/4 * (rf^2 + 2*(rf*rc) + 3*rc^2)/(rf^2+rf*rc + rc^2))
+        #  where
+        #   l = length of cylinder,
+        #   rf = radius of frustum base (top), and
+        #   rc = radius of cylinder,
+        # and the equation for an ogive is found in Seglates 2019 Eq. 3
+        # CGogive = pi/Vo/R3 * (
+        #     -2/3*(f-1)*(f^3-(f-1)^3) + (1/2*(f^2+(f-1)^2)*nbl^2) - 1/4nbl^4
+        #     )
+        # where
+        #  Vo/R3, f, nbl are defined above in the volume of the ogive
+        CGc = lc / 2
+        CGf = (lf/4) * (
+                (np.power(rf,2) + 2*rf*rc + 3*np.power(rc,2)) /
+                (np.power(rf,2) + rf*rc + np.power(rc, 2))
+        )
+        CGo = (np.pi/vo_r3) * (
+                -(2/3 * (f-1) * (np.power(f,3) - np.power(f-1,3))) +
+                (0.5 * (np.power(f,2) + np.power(f-1,2)) * np.power(nbl,2)) -
+                (np.power(nbl,4)/4)
+        )
+
+        # and to find the CG of the bullet,
+        #  https://www.grc.nasa.gov/www/k-12/rocket/rktcg.html
+        # we need to estimate the weights (using weight & mass interchangeably)
+        # requires the mean density of the bullet: density = mass / volume
+        # w(cyl) = pi * rc^2* lc * density
+        # w(frs) = (1/3 * pi * lf * (rb^2 + rb*r * r^2)) * density
+        # w(ogv) = w(bullet) - w(cyl) - w(frs)
+        #  where
+        #   rc = the radius of the bullet,
+        #   lc = length of the cylinder,
+        #   lf = length of the frustum, and
+        #   rb = radius of the base (top of frustum)
+        p = self._m / self._vol
+        mc = (np.pi * np.power(rc,2) * lc) * p
+        mf = ((np.pi * lf*(np.power(rf,2) + (rf*rc) + np.power(rf,2)))/3) * p
+        mo = self._m - mc - mf
+        self._xcg = (mf*CGf + mc*(CGc + lf) + mo*(CGo + lf + lc))/self._m
+
+        # 3. Moments of Inertia use the sum of constituent components Boynton,
+        # Wiener 2001. We will use kg-m^2 and need to convert lengths, radii
+        # to meters
+        rf *= bls.MM2M
+        lf *= bls.MM2M
+        rc *= bls.MM2M
+        lc *= bls.MM2M
+
+        # for the frustum use the equation of moments of inertia of a cone
+        # https://en.wikipedia.org/wiki/List_of_moments_of_inertia
+        # subtracting Iorg - Itop and Iyorg-Iytop where org = 'original cone'
+        # and top = the portion of the 'original cone' cut to make the frustum
+        # the equations for the moments of a cone are
+        # Ix = 3/10 * m * r^2
+        # Iy = m*(3/20*r^2 + 3/80*h^2)
+        #  where
+        #   m = mass of the cone,
+        #   r = radius of the base of the cone, and
+        #   h = height of the cone
+        # Since we know the radius of the orginal cone = rc, the radius of the
+        # top cone = rf and the height of the frustum = lf we will use similar
+        # triangles to rewrite the heights of the cones in terms of the frustum's
+        # height
+        #  rc/horg = rf/(horg-lf)
+        #  horg = lf*rc/(rc-rf)
+        #   and
+        #  rc/(htop+lf) = rf/htop
+        #  htop = lf*rf/(rc-rf)
+        # Likewise, we will first, rewrite the mass of the top in terms of the
+        # mass of the cone then rewrite the mass of the cone in terms of the
+        # mass of the frustum see
+        #  https://www.quora.com/How-can-I-show-that-the-moment-of-inertia-of-
+        #  a-truncated-cone-about-its-axis-with-the-radius-of-its-ends-being-a-
+        #  and-b-is-frac-3m-10-frac-a-5-b-5-a-3-b-3
+        # for details
+        # morg = mf/(1-(rf^3/rc^3))
+        #  and
+        # mtop = (rf^3/rc^3)*morg
+        # plugging the values into the moments equations simplifications can be
+        # made such that
+        # Ixf = 3/10 * mf/(rc*3-rf^3) * (rc^5 - rf^5)
+        #  and
+        # Iyf = (mf*rc^3)/(rc^3-rf^3) * (3/20*rc^2 + 3/80*horg^2) -  (Original)
+        #       (mf*rf^3)/(rc^3-rf^3) * (3/20*rf^2 + 3/80*htop^2)    (Top)
+        Ixf = Iyf = 0.
+        if mspec['frs-shp'] != model.FRS_NNE: # no frustum, ignore
+            lorg = (lf*rc) / (rc-rf)
+            ltop = (lf*rf) / (rc-rf)
+            _d = np.power(rc,3) - np.power(rf,3)
+            Ixf = .3 * (np.power(mf,2)/(np.power(rc,3) - np.power(rf,3))) * \
+                       (np.power(rc,5) - np.power(rf,5))
+            Iyorg = ((mf*np.power(rc,3)) / _d) * (
+                    (3/20) * np.power(rc,2) + (3/80) * np.power(lorg,2)
+            )
+            Iytop = ((mf*np.power(rf,3)) / _d) * (
+                    (3/20) * np.power(rf,2) + (3/80) * np.power(ltop,2)
+            )
+            Iyf = Iyorg - Iytop
+
+        # the cylinder Ix and Iy can be found in
+        # https://en.wikipedia.org/wiki/List_of_moments_of_inertia
+        #  Ix = 1/2 * m * r^2
+        #  Iy = 1/12 * m * (3*r^2 + h^2)
+        #   where
+        #    m = mass of cylinder (kg),
+        #    r = radius of cylinder (m), and
+        #    h = height of cylinder (m)
+        # rc *= bls.MM2M
+        # lc *= bls.MM2M
+        Ixc = 0.5 * mc * np.power(rc,2)
+        Iyc = mc/12 * (3*np.power(rc,2) + np.power(lc,2))
+
+        # finally for the ogive
+        # Using Seglates 2019 Eq. 5
+        # Ixogive/p*R^5 = np.pi*(b0*(f^2*arcsin(nbl/f) - (f-1)*nbl) -
+        #                  2*nbl^3*(b1/3 + b2/4 + b3/5))
+        # where
+        #  f, the ogival head radius of curvature and nbl the non-dimensional
+        #  ballistic length are defined above and integrations constants b0 -
+        #  b3 are
+        # b3 = -1,
+        # b2 = 3 + 7/5*b3*f,
+        # b1 = -3 + 5/4*b2*f,
+        # b0 = 1 + 3/5*b1*f,
+        # p = mean density of the bullet, and
+        # R = radius of the ogive
+        b3 = -1
+        b2 = 3 + 7/5*b3*f
+        b1 = -3 + 5/4*b2*f
+        b0 = 1 + 3/5*b1*f
+        Ixo = np.pi * (b0*(np.power(f,2)*utils.arcsin(nbl/f) - (f-1)*nbl) -
+                       2*np.power(nbl,3) * (b1/3 + b2/4 + b3/5))
+        Ixo *= p*np.power(rc,5)
+
+        # and Seglates 2019 Eq. 6
+        # Iyogive/P*R^5 = pi/4 * ((f^2*nbl*(f^2+7/2*(f-1)^2)) +
+        #                        1/15*nbl^5 -
+        #                        f^2*(f-1)*(5/2*f^2 + 2*(f-1)^2)*arcsin(nbl/f)
+        _1 = np.power(f,2) * nbl * (np.power(f,2) + (7/2)*np.power(f-1,2))
+        _2 = np.power(nbl,5) / 15
+        _3 = np.power(f,2) * (f-1) * (
+                ((5/2) * np.power(f,2) + 2*np.power(f-1,2)) * utils.arcsin(nbl/f)
+        )
+        Iyo = (np.pi/4) * (_1 + _2 - _3)
+        Iyo *= p*np.power(rc,5)
+
+        # sum the moments
+        self._Ix = Ixf + Ixc + Ixo
+        self._Iy = Iyf + Iyc + Iyo

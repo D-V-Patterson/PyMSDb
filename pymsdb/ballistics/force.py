@@ -20,6 +20,7 @@ __email__ = 'dale.v.patterson@gmail.com'
 __status__ = 'Development'
 
 import numpy as np
+import pymsdb.utils as utils
 import pymsdb.ballistics.atmosphere as atm
 
 """
@@ -36,7 +37,7 @@ def gravity():
 	""" returns a xyz vector of gravity's affect given angle """
 	return -np.array([0.,atm.G,0.],np.double)
 
-#### DRAG RELATED
+#### DRAG
 
 def Fd(blt,rho=atm.RHO):
 	"""
@@ -56,7 +57,6 @@ def Fd(blt,rho=atm.RHO):
 	  Fd in (N or kg⋅m/s^2)
 	"""
 	return mFd(blt,rho)*blt.velocity*blt.v_i
-	#return -(0.5*blt.Cd()*blt.velocity*blt.v_i*rho*blt.A)/blt.mass
 
 def mFd(blt,rho=atm.RHO):
 	"""
@@ -75,4 +75,29 @@ def mFd(blt,rho=atm.RHO):
 	"""
 	return -(0.5*blt.Cd()*rho*blt.A)/blt.mass
 
+#### CORIOLIS
 
+def Ec(blt,lat=32.,az=90):
+	"""
+	calculates the coriolis effect on bullet
+	:param blt: Bullet object
+	:param lat: latitude of firer (degrees)
+	:param az: azimuth of fire (degrees) due North = 0, east = 90
+	:return: the coriolis acceleration (array)
+	from McCoy 1999, eq 8.27 pg 178
+	 Ec_x = 2*Omega * (-Vy*cos(L)*sin(AZ) - Vz*sin(L)
+	 Ec_y = 2*Omega * (Vx*cos(L)*sin(Az) + Vz*cos(L)*cos(AZ)
+	 Ec_z = 2*Omega * (Vx*sin(L) - Vy*cos(L)*cos(AZ))
+	 where
+	  Vx, Vy, Vz = the bullet's velocity components,
+	  L = latitude of firer (degrees), and
+	  AZ = azimuth of fire (degrees) due North = 0, east = 90
+	"""
+	return 2*atm.OMEGA * np.array(
+		[
+			-blt.v_y*utils.sin(lat)*utils.sin(az) - blt.v_z*utils.sin(lat),
+			blt.v_x*utils.cos(lat)*utils.sin(az) +
+			blt.v_z*utils.cos(lat)*utils.cos(az),
+			blt.v_x*utils.sin(lat) - blt.v_y*utils.cos(lat)*utils.cos(az)
+		],np.double
+	)
