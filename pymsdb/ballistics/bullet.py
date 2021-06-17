@@ -12,7 +12,7 @@ Defines caliber dataset reading/writing and the Caliber class
 
 #__name__ = 'bullet'
 __license__ = 'GPLv3'
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 __date__ = 'June 2021'
 __author__ = 'Dale Patterson'
 __maintainer__ = 'Dale Patterson'
@@ -52,18 +52,15 @@ TODO:
   9. Want range based functions vice time (requires integration?) 
  11. continue allowing return of nan in Lahti defined coefficients? or return None
   or throw error?
- 12. need to identify bullet measurements to include
-  bullet length
-  base (or end diameter) (of the frustum) and base area
-  ogive, cylinder and frustum measurements 
-  center of gravity location
- 13. need to calculate/estimate
-   Ix = axial moment of inertia about the spin axis
-   Iy = transverse moment of inertia about any axis perpendicular to the spin
-    axis
- 14. Need to verify Cl and Cma - both of these return numbers > 1 wheras other
+  14. Need to verify Cl and Cma - both of these return numbers > 1 wheras other
   coefficients are all < 1
  15. add option to set/configure windage angle
+ 16. go over all of C* coefficients (see #14) and Sg, Sd - currently 7.62x39
+  are not stable at time of launch
+   Sg = 7.66021391257673e-08
+   Sd = 0.17335842912805038
+    1 / (Sd*(2-Sd)) = 3.1579241889093637
+   Sg >= 1/ (Sd*(2-Sd)) = False
 """
 
 class Bullet(object):
@@ -380,7 +377,7 @@ class Bullet(object):
             raise BulletException("{} diameter is undefined".format(self._name))
 
 #### CALCULABLE ATTRIBUTES
-# change w.r.t time/velocity etc
+# change w.r.t velocity etc
 
     def ke(self): return np.round(self._m*np.power(self._vi,2)*0.5,3)
 
@@ -488,11 +485,9 @@ class Bullet(object):
         if M >= 1.:
             Cma = 2 * ((self._vol - ba*self._xcg)/(np.sqrt(M)*A*self._d))
             Cmq = 2*_1 - Cma
-            #return 2 * ((self._vol-ba*(self._blen-self._xcg)) / (np.sqrt(M)*a*self._d))
         else:
             Cma =  (2*np.sqrt(M)) * ((self._vol - ba*self._xcg)/(A*self._d))
             Cmq = _1 - Cma
-            #return 2 * np.sqrt(M) * ((self._vol-ba*(self._blen-self._xcg)) / (a*self._d))
         return Cma,Cmq
 
     def Cmm(self):
@@ -545,6 +540,58 @@ class Bullet(object):
         if M < 1: return np.sqrt(self._oabl/self._d)*(self._db/self._d)
         else:
             return np.sqrt(M)*np.sqrt(self._oabl/self._d)*(self._db/self._d)
+
+    def Sg(self,rho=atm.RHO):
+        """
+        calculates the gyroscopic stability parameter
+        :return: the gyroscopic stability parameter
+        uses Lahti 2019, eq 14
+        Sg = (Ix^2 * p^2) / (2*rho*Iy*S*d*Cma)
+        where
+         Ix = axial moment of inertia (kg*m^2),
+         p = spin rate (radians/s),
+         rho = air density (kg/m^3),
+         Iy = transverse moment of inertia (kg*m^2),
+         S = body reference area (m^2),
+         d = body diameter (m),
+         v = velocity (m/s^2), and
+         Cma = pitching moment coefficient slope
+         TODO: see Lahti eq 15 "The classical gyroscopic stability critierion for
+          spin-stablized bullets is Sg > 1
+          For 7.62x39 we get 7.66e-08
+        """
+        Cma = self.Cmp()[0]
+        return (np.power(self._Ix,2) * self._pi) / (
+                2*rho*self._Iy*self.A*(self._d*bls.MM2M)*np.power(self._vi,2)*Cma
+        )
+
+    def Sd(self):
+        """
+        calculates the dynamic stability parameter
+        :return: the dynamic stability parameter
+        use Lahti 2019, eq 16
+         Sd = 2*(Cla + (m*d^2)/(2*Ix)*Cmm) /
+              Cla - Cd0 - (m*d^2)/2*Iy * (Cmq - Cma)
+        where
+         Cla = lift force coefficient slope,
+         m = total mass (kg),
+         Cmm = magnus moment coefficient slope
+         Cd0 = zero-yaw drag coefficient, and
+         Cmq, Cma are the pitch damping coefficients
+        """
+        d2 = np.power(self._d*bls.MM2M,2)
+        _1 = 2 * (self.Cl() + ((self._m*d2)/(2*self._Ix)) * self.Cmm())
+        _2 = self.Cl() - self.Cd0() - ((self._m*d2)/(2*self._Iy)) * sum(self.Cmp())
+        return _1 / _2
+
+    def dynamic_stability(self,rho=atm.RHO):
+        """
+        determines whether the bullet is dynamically stable Lahit Eqs 17, 18
+        :return: True if the bullet is stable, False otherwise
+        """
+        Sg = self.Sg(rho)
+        Sd = self.Sd()
+        return Sg >= 1/(Sd*(2-Sd))
 
 #### FIRING METHODS
 
