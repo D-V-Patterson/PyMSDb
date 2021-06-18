@@ -65,10 +65,30 @@ TODO:
 
 class Bullet(object):
     """
-     Bullet represents a single 'record' (i.e. weight in grains, velocity in m/s
-      and drag model) of a Caliber Object
-     Bullets additionally have a velocity vector which consists of the magniuted
-      = velocity and position = (x,y,z)
+     Bullet represents a single 'record' (i.e. weight, velocity) of the
+     corresponding Caliber Object
+     Bullet geometric properties are in metric units
+      d = diameter at widest portion of body (mm)
+      db = base diameter/frustum diameter (mm). (If the bullet has no frustum
+       this will = d).
+      oal = (Overall length), the length of the round from the bullet tip to
+       the end of the cartridge (mm)
+      oabl = (Overall bullet length), the length of the bullet from the tip to
+       the base (mm)
+      mass = (using weight/mass interchangeably) (kg)
+      volume = (mm^3)
+      vp = 3d position vector the position w.r.t to the shooter (see below) (m)
+      xcg = axial center of gravity, the distance from the base of the bullet
+       to the center of gravity on the x-axis (centerline) (mm)
+      SD = sectional density (see https://www.chuckhawks.com/sd.htm) (kg/m^2)
+       to convert to imperial use balllistics.msd2isd
+      A = cross-sectional area ((https://www.chuckhawks.com/frontal_area.htm)
+       (m^2) to convert to imperial use ballistics.ma2ia
+      BC = ballistic coefficient (kg/m^2) to convert to imperial use
+      ballistics.msd2isd
+      i = form factor (McCoy 1991, eq 6.44 pg 101 (unitless)
+     Bullets additionally have a velocity vector which consists of the axial
+     components (x,y,z) of velocity and position = (x,y,z)
      Adopting the coordinate system of McCoy 1999, Figure 5.1
 
          y=elevation
@@ -98,15 +118,6 @@ class Bullet(object):
 
     where S = shooter, T = target. We will assume that due North = 0 degrees is
     at 9 o'clock, and due West = 270 degrees is 6 o'clock, etc
-
-    Bullets measurements are
-     d = diameter at widest portion of body
-     db = base diameter = diameter of boattail. If there is no boattail, this
-      will = d sometimes called end diameter
-     oal = (Overall length) is the length of the round from the tip of the cone
-      to the end of the cartridge
-     oabl = (Overall bullet length) is the length of the bullet the tip of the cone
-      to the base of the boattail (or base of the cylinder if there is no boattail)
     """
 
     def __init__(self,name,cd,sz,d,clen,blen,w,v,cg,mdl):
@@ -136,7 +147,7 @@ class Bullet(object):
          _vp = <3D vector> 'current' position (m) on the x,y,z axis
          _p0 = <double> initial spin rate (radians/s) defined in Lahti 2019 eq 1
          _pi = <double> current spin rate (radians/s) defined in Lahti 2019 eq 2
-         _vol = <double> estimated volume of the bullet
+         _vol = <double> estimated volume of the bullet (mm^3)
          _db = <double> base diameter (for bullets with frustums else db = d)
          _xcg = <double> bullet's x-axis center of gravity (dist. from base) (mm)
          _Ix = <double> bullet's axial moment of inertia (kg-m^2)
@@ -309,9 +320,6 @@ class Bullet(object):
          print the steps defined in the range i to j
         :param i: first step
         :param j: last step use -1 for last element and None to print only at i
-        NOTE:
-         ignores z-axis for now since it is not being used
-         (x=?,y=)
         """
         strf = "At time t={:.2f}. Vel.= {:.1f}. Pos: (x={:.2f},y={:.2f},z={:.2f})" \
                " and Vel: (x={:.1f},y={:.1f},z={:.1f})."
@@ -359,6 +367,7 @@ class Bullet(object):
          labels or via equation. As manufacturer can be missleading and due
          to BC changing w.r.t velocity, will implement as an equation of velocity
          :return: ballistic coefficient in kg/m^2
+         see http://www.dexadine.com/qbcunits.html
          BC = m / (i(v,md)*d^2)
           where
            m = mass,
