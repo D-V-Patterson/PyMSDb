@@ -116,7 +116,7 @@ Sturm, Ruger & Co	10/22	10/22		Rifle	Carbine		SA	.22 LR, .22 WMR	18.5	37	37	5	6	
 Sturm, Ruger & Co	M77	M77		Rifle	Carbine		BA	.22-250 Remington	22	42	42	6.75		Fixed	MC		1:14									int-blind:hinge-floor:manual-top	internal	4		
 Sturm, Ruger & Co	Mini-14	Mini-14		Rifle	Carbine		SA	.223, 5.56x45	18.5	38	38	7		Fixed	MC		1:9									mag-well:btn-release:insert-lock	forward	20		Some can only fire .223
 Sturm, Ruger & Co	Model 44	Model 44		Rifle	Carbine		SA	.44 Remington Magnum	18.25	36.75	36.75	5.75	6	Fixed	MC	gas-operated, rotating-bolt										int-tube:rel-sng-btm:manual-btm	internal	4		does not really fit defined feed-system codes
-Tula	SKS Type 45	SKS	Type 45	Rifle	Carbine		SA	7.62x39	20.62	40.16	40.16	8.5		Fixed	MC	short-stroke, gas-operated, tilting-bolt	1:7.874	31.75				35				mag-well:btn-release:insert-lock	forward	10		in actuallty, it is 1:200 in mm
+Tula	SKS Type 45	SKS	Type 45	Rifle	Carbine		SA	7.62x39	20.62	40.16	40.16	8.5		Fixed	MC	short-stroke, gas-operated, tilting-bolt	1:7.625	31.75				35				mag-well:btn-release:insert-lock	forward	10		in actuallty, it is 1:200 in mm
 Universal	M1	M1		Rifle	Carbine		SA	.30 Carbine	18	35.58	35.58	5		Fixed	MC		1:20							270		mag-well:btn-release:insert-lock	forward	15		
 Benelli Armi SpA	M4 Super 90	M4 Super 90		Shotgun	single-barrel		SA	12-gauge	18.5	35	35	8.42		Collapsible	A2	gas-operated, rotating-bolt							140	50		int-tube:rel-sng-btm:manual-feed-rmp	internal	5		
 Browning	BPS	BPS		Shotgun	single-barrel		PA	12-gauge	26	46.75	46.75	7.69		Fixed	MC											int-tube:rel-sng-btm:manual-btm	internal	4		
@@ -139,7 +139,7 @@ Winchester	1300 Defender	1300	Defender	Shotgun	single-barrel		PA	12-gauge	18	39.
 Colt	Competition	Competition		Pistol			SA							N/A	HG											mag-well:btn-release:insert-lock	inside			
 Hi-Point Firearms	CF-380	CF-380		Pistol			SA							N/A	HG											mag-well:btn-release:insert-lock	inside			
 Colt	New Agent Series 90	New Agent	Series 90	Pistol			SA							N/A	HG											mag-well:btn-release:insert-lock	inside			
-Norinco	NP44	NP44		Pistol			SA	.45 ACP	5	8.5	8.5	2.44		N/A	HG	short-recoil, locked-breech	1:16	5.334				25	100	50		mag-well:btn-release:insert-lock	inside	7	1911	
+Norinco	NP44	NP44		Pistol			SA	.45 ACP	5	8.5	8.5	2.44		N/A	HG	short-recoil, locked-breech	1:9.125	5.334				25	100	50		mag-well:btn-release:insert-lock	inside	7	1911	
 OMC	AMT Backup	AMT Backup		Pistol			SA							N/A	HG											mag-well:btn-release:insert-lock	inside			
 Sig Sauer	P232	P232		Pistol			SA	.380 ACP						N/A	HG											mag-well:btn-release:insert-lock	inside			
 Smith & Wesson	SW99	SW99		Pistol			SA	9x19						N/A	HG											mag-well:btn-release:insert-lock	inside			
