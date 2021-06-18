@@ -61,13 +61,14 @@ TODO:
    Sd = 0.17335842912805038
     1 / (Sd*(2-Sd)) = 3.1579241889093637
    Sg >= 1/ (Sd*(2-Sd)) = False
+ 18. For ke, momentum do we want to round or not?
 """
 
 class Bullet(object):
     """
-     Bullet represents a single 'record' (i.e. weight, velocity) of the
+     - Bullet represents a single 'record' (i.e. weight, velocity) of the
      corresponding Caliber Object
-     Bullet geometric properties are in metric units
+     - Bullet geometric properties are in metric units
       d = diameter at widest portion of body (mm)
       db = base diameter/frustum diameter (mm). (If the bullet has no frustum
        this will = d).
@@ -84,9 +85,12 @@ class Bullet(object):
        to convert to imperial use balllistics.msd2isd
       A = cross-sectional area ((https://www.chuckhawks.com/frontal_area.htm)
        (m^2) to convert to imperial use ballistics.ma2ia
-      BC = ballistic coefficient (kg/m^2) to convert to imperial use
-      ballistics.msd2isd
+     - Bullet velocity dependent properties
+      BC = ballistic coefficient (kg/m^2) is calculate dynamically using the
+       current velocity to convert to imperial use ballistics.msd2isd
       i = form factor (McCoy 1991, eq 6.44 pg 101 (unitless)
+      ke = kinetic energy dynamic using current velocity (J, kg*m^2/s^2)
+      momentum = (kg*m/s)
      Bullets additionally have a velocity vector which consists of the axial
      components (x,y,z) of velocity and position = (x,y,z)
      Adopting the coordinate system of McCoy 1999, Figure 5.1
