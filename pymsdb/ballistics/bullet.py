@@ -126,6 +126,8 @@ class Bullet(object):
         :return: a Bullet object
 
         In addition to initialized parameters, also creates internal variables
+         _A = <double> cross-sectional area (m^2)
+         _SD = <double> sectional density (kg/m^2)
          _m = <double> mass (kg) by converting w in gr to kg
          _t = <double> 'current' time (s)
          _t = <double> 'current' time (s)
@@ -153,16 +155,18 @@ class Bullet(object):
         self._w = w
         self._cg = cg
 
-        # create variables for trajectory calculations that will be initialized
-        # in reset ()
+        # create mass properties that can derived at initiation, that are model
+        # dependent and variables for trajectory calculations
         self._m = np.double(self._w*bls.GR2KG)
+        self._A = (np.pi*np.power(self._d*bls.MM2M,2)) / 4
+        self._SD = self._m / np.power(self._d*bls.MM2M,2)
         self._db = None
         self._vol = None
         self._xcg = None
         self._Ix = None
         self._Iy = None
         self._t = 0.
-        self._vi = None
+        self._vi = None # at time t = i
         self._vp = None # at time t = i
         self._vv = None # at time t = i
         self._vp0 = None # at time t = 0
@@ -272,6 +276,12 @@ class Bullet(object):
     def mass(self): return self._m
 
     @property
+    def SD(self): return self._SD
+
+    @property
+    def A(self): return self._A
+
+    @property
     def d(self): return self._d
 
     @property
@@ -334,48 +344,6 @@ class Bullet(object):
                 )
             )
 
-#### DERIVED PROPERTIES
-# constant throughout 'lifetime' of bullet but require calculation
-
-    @property
-    def SD(self):
-        """
-        sectional density of bullet (https://www.chuckhawks.com/sd.htm)
-        :return:
-        each mass
-         sd = m/d^2 (in kg/m^2)
-          where
-          m = the mass(s)
-          d = the diamter
-         NOTE:
-          SD is returned in kg/m^2 IOT maintain consistentency across other
-           calculations
-          To convert to imperial lb/in^2 divide SD by 703
-        """
-        try:
-            return self._m/np.power(self._d*bls.MM2M,2)
-        except TypeError: # mass and/or diameter unknown
-            raise BulletException(
-                "{} mass and/or diameter is undefined".format(self._name)
-            )
-
-    @property
-    def A(self):
-        """
-        cross-sectional area (https://www.chuckhawks.com/frontal_area.htm)
-         :return:
-         a = pi * r^2 (in m^2)
-          where
-           pi = apx 3.14 and
-           r = the radius of the bullet
-           To convert to imperial mulitply A by 1550
-        NOT TO  BE CONFUSED WITH RETARDATION A
-        """
-        try:
-            return (np.pi*np.power(self._d*bls.MM2M,2)) / 4
-        except TypeError: # diameter unknown
-            raise BulletException("{} diameter is undefined".format(self._name))
-
 #### CALCULABLE ATTRIBUTES
 # change w.r.t velocity etc
 
@@ -427,7 +395,7 @@ class Bullet(object):
 
     def Cd(self):
         """
-        caluclates the drag coefficient (uses hooke's method)
+        calculates the drag coefficient (uses hooke's method)
         :return: drag coefficient
         """
         try:
@@ -439,8 +407,13 @@ class Bullet(object):
 
     def Cl(self):
         """
-        calculates the lift coefficient using Lahti 2019 eq 8, pg 41
+        calculates the lift coefficient
         :return: lift coefficient
+        uses Lahti 2019 eq 8, pg 41
+        Cl = Cn - Cd0
+         where
+          Cn = normal force coefficient slope, and
+          Cd0 = zero-yaw drag coefficient
         """
         return self.Cn() - self.Cd0()
 
@@ -455,8 +428,8 @@ class Bullet(object):
          eq 10: Cma = 2*sqrt(M) * (Vo - Sb * (l-xcg)) / (S*d) (M < 1 subsonic)
           where
            Vo = Volume (mm^3),
-           S = cross sectional area (A()) (m^2),
-           Sb = base area (m^2),
+           S = cross sectional area (A()) (mm^2),
+           Sb = base area (m^m2),
            xcg = location of center of gravity on spin axis,
            l = bullet length, and
            d = bullet diameter (m)
@@ -473,8 +446,8 @@ class Bullet(object):
         """
         # TODO: Lahti measures the cog from the nose of the bullet, we measure
         #  from the base so we are not subtracting the xcg from the length
-        ba = (np.pi*self._db)/4 # base area
-        A = self.A * bls.M2MM   # have to convert to mm for equation
+        S = self._A * 1e6       # convert to mm^2
+        Sb = (np.pi*self._db)/4 # base area
         M = self.mach()
         if M < 0.5: M = 0.5 # use 0.5 for any mach < 0.5
 
@@ -483,10 +456,10 @@ class Bullet(object):
 
         # calculate Cma, and use that to find Cmq
         if M >= 1.:
-            Cma = 2 * ((self._vol - ba*self._xcg)/(np.sqrt(M)*A*self._d))
+            Cma = 2 * ((self._vol - Sb*self._xcg)/(np.sqrt(M)*S*self._d))
             Cmq = 2*_1 - Cma
         else:
-            Cma =  (2*np.sqrt(M)) * ((self._vol - ba*self._xcg)/(A*self._d))
+            Cma =  (2*np.sqrt(M)) * ((self._vol - Sb*self._xcg)/(S*self._d))
             Cmq = _1 - Cma
         return Cma,Cmq
 
@@ -560,9 +533,10 @@ class Bullet(object):
           spin-stablized bullets is Sg > 1
           For 7.62x39 we get 7.66e-08
         """
-        Cma = self.Cmp()[0]
-        return (np.power(self._Ix,2) * self._pi) / (
-                2*rho*self._Iy*self.A*(self._d*bls.MM2M)*np.power(self._vi,2)*Cma
+        Cma = self.Cmp()[0]          # Cma is first element
+        S = self._A * 1e6            # convert to mm^2
+        return (np.power(self._Ix,2)*np.power(self._pi,2)) / (
+                2*rho*self._Iy*S*self._d*np.power(self._vi,2)*Cma
         )
 
     def Sd(self):
@@ -579,8 +553,8 @@ class Bullet(object):
          Cd0 = zero-yaw drag coefficient, and
          Cmq, Cma are the pitch damping coefficients
         """
-        d2 = np.power(self._d*bls.MM2M,2)
-        _1 = 2 * (self.Cl() + ((self._m*d2)/(2*self._Ix)) * self.Cmm())
+        d2 = np.power(self._d,2)
+        _1 = 2 * (self.Cl() + ((self._m*d2) / (2*self._Ix)) * self.Cmm())
         _2 = self.Cl() - self.Cd0() - ((self._m*d2)/(2*self._Iy)) * sum(self.Cmp())
         return _1 / _2
 
