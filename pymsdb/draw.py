@@ -21,6 +21,7 @@ __status__ = 'Development'
 
 import numpy as np
 import matplotlib.pyplot as plt
+import pymsdb.ballistics as bls
 #from matplotlib.patches import RegularPolygon
 #from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 #from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -269,17 +270,59 @@ def plot_trajectory3d(steps):
     ax.plot(xs,ys,zs)
     plt.show()
 
-#def plot_cd(blt):
-#    """
-#    plot the cd of blt from 0 to initial velocity
-#    :param blt:
-#    :return:
-#    """
-#    xs = np.arange(0,blt.v_0,0.1)
-#    ys = []
-#    for i in xs:
-#        blt.v_i = i
-#        ys.append(force.hooke(blt))
-#
-#    plt.plot(xs,ys)
-#    plt.show()
+def plot_coefficient(blt,param='Cd'):
+    """
+    plot the cd of blt from 0 to initial velocity
+    :param blt: Bullet Object
+    :param param: coefficient to plot
+    :return:
+    """
+    xs = np.arange(0,blt.v_0,0.1)
+    ys = []
+
+    # NOTE: in order to do this, we have to set the 'current' velocity of the
+    # bullet via access to private attribute
+    v = blt.v_i
+    for i in xs:
+        blt._vi = i
+        if param == 'BC-i':
+            ys.append(blt.BC()*bls.msd2isd)
+            plt.title("{}: BC imperial".format(blt.name))
+            plt.ylabel("BC")
+        elif param == 'BC-m':
+            ys.append(blt.BC())
+            plt.title("{}: BC metric".format(blt.name))
+            plt.ylabel("BC")
+        elif param == 'Cd':
+            ys.append(blt.Cd())
+            plt.title("{}: {}".format(blt.name,"$C_{D}$"))
+            plt.ylabel("$C_{D}$")
+        elif param == "Cd0":
+            ys.append(blt.Cd0())
+            plt.title("{}: {}".format(blt.name,"$C_{D0}$"))
+            plt.ylabel("$C_{D0}$")
+        elif param == 'Cl':
+            ys.append(blt.Cl())
+            plt.title("{}: {}".format(blt.name, "$C_{L}$"))
+            plt.ylabel("$C_{L}$")
+        elif param == 'Cn':
+            ys.append(blt.Cn())
+            plt.title("{}: {}".format(blt.name, "$C_{N}$"))
+            plt.ylabel("$C_{N}$")
+        elif param == 'Cma':
+            ys.append(blt.Cmp()[0])
+            plt.title("{}: {}".format(blt.name, "$C_{M_{a}}$"))
+            plt.ylabel("$C_{M_{a}}$")
+        elif param == 'Cmq':
+            ys.append(blt.Cmp()[0])
+            plt.title("{}: {}".format(blt.name, "$C_{M_{q}}$"))
+            plt.ylabel("$C_{M_{q}}$")
+        elif param == 'Cmm':
+            ys.append(blt.Cn())
+            plt.title("{}: {}".format(blt.name, "$C_{M}$"))
+            plt.ylabel("$C_{M}$")
+    blt._vi = v
+
+    plt.xlabel("Velocity (m/s)")
+    plt.plot(xs,ys)
+    plt.show()

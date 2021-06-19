@@ -62,6 +62,7 @@ TODO:
     1 / (Sd*(2-Sd)) = 3.1579241889093637
    Sg >= 1/ (Sd*(2-Sd)) = False
  18. For ke, momentum do we want to round or not?
+ 19. round off errors
 """
 
 class Bullet(object):
@@ -77,7 +78,7 @@ class Bullet(object):
       oabl = (Overall bullet length), the length of the bullet from the tip to
        the base (mm)
       mass = (using weight/mass interchangeably) (kg)
-      volume = (mm^3)
+      volume = (m^3)
       vp = 3d position vector the position w.r.t to the shooter (see below) (m)
       xcg = axial center of gravity, the distance from the base of the bullet
        to the center of gravity on the x-axis (centerline) (mm)
@@ -173,7 +174,7 @@ class Bullet(object):
         # create mass properties that can derived at initiation, that are model
         # dependent and variables for trajectory calculations
         self._m = np.double(self._w*bls.GR2KG)
-        self._A = (np.pi*np.power(self._d*bls.MM2M,2)) / 4
+        self._A = np.pi*np.power(self._d*bls.MM2M/2,2)
         self._SD = self._m / np.power(self._d*bls.MM2M,2)
         self._db = None
         self._vol = None
@@ -235,7 +236,7 @@ class Bullet(object):
         :param mdl:
         :return:
         """
-        if mdl not in model.imodels:
+        if mdl not in model.models:
             raise BulletException(
                 "{}: invalid 'drag model' ({})".format(self._name,mdl)
             )
@@ -440,11 +441,11 @@ class Bullet(object):
          eq 9:  Cma = 2 * (Vo - Sb * (l-xcg) / (sqrt(M)*S*d) (M >= 1 supersonic)
          eq 10: Cma = 2*sqrt(M) * (Vo - Sb * (l-xcg)) / (S*d) (M < 1 subsonic)
           where
-           Vo = Volume (mm^3),
-           S = cross sectional area (A()) (mm^2),
-           Sb = base area (m^m2),
-           xcg = location of center of gravity on spin axis,
-           l = bullet length, and
+           Vo = Volume (m^3),
+           S = cross sectional area (A()) (m^2),
+           Sb = base area (m^2),
+           xcg = location of center of gravity on spin axis (m),
+           l = bullet length (m), and
            d = bullet diameter (m)
 
         This gives us Cma in McCoy eq 10.11, pg 223 to find Cmq we'll use
@@ -453,27 +454,36 @@ class Bullet(object):
          Cmq + Cma = -Cn * ((l-xcg)/d)^2
           where
            Cn = normal force coefficient,
-           l = bullet length,
-           xcg = center of gravity, and
-           d = bullet diameter
+           l = bullet length (m),
+           xcg = center of gravity (m), and
+           d = bullet diameter (m)
+        TODO: Lahti measures CG from the nose of the bullet, we measure
+         from the base so we are not subtracting the xcg from the length
         """
-        # TODO: Lahti measures the cog from the nose of the bullet, we measure
-        #  from the base so we are not subtracting the xcg from the length
-        S = self._A * 1e6       # convert to mm^2
-        Sb = (np.pi*self._db)/4 # base area
+        # since A is in m^2 and volume is in m^3 convert, xcg, d to meters
+        xcg = self._xcg*bls.MM2M                   # m
+        d = self._d*bls.MM2M                       # m
+        Sb = np.pi*np.power(self._db*bls.MM2M/2,2) # m^2
+
+        # get the mach number (set to 0.5 if less than 0.5)
         M = self.mach()
         if M < 0.5: M = 0.5 # use 0.5 for any mach < 0.5
 
-        # pre-calculate portion of Cmq
-        _1 = -self.Cn()*np.power(self._xcg/self._d,2)
+        # pre-calculated commonalitys of eq 9 & 10 and eq 12 & 13
+        _1 = (self._vol - Sb*xcg) / (self.A*d)
+        _2 = -self.Cn()*np.power(xcg/d,2)
 
-        # calculate Cma, and use that to find Cmq
-        if M >= 1.:
-            Cma = 2 * ((self._vol - Sb*self._xcg)/(np.sqrt(M)*S*self._d))
-            Cmq = 2*_1 - Cma
+        # factors of eq 9 & 10, and of eq 12 & 13 mach dependent
+        if M > 1.:
+            fa = 2/np.sqrt(M)
+            fq = 2
         else:
-            Cma =  (2*np.sqrt(M)) * ((self._vol - Sb*self._xcg)/(S*self._d))
-            Cmq = _1 - Cma
+            fa = 2*np.sqrt(M)
+            fq = 1
+
+        # calculate Cma
+        Cma = fa*_1
+        Cmq = (fq*_2) - Cma
         return Cma,Cmq
 
     def Cmm(self):
@@ -481,32 +491,20 @@ class Bullet(object):
          calculates the Magnus moment coefficient
         :return: mangus momenet coefficient
          uses Lahti 2019 eq 11 pg 41
-          (M/2 - 1) * 1/4*db * (1-xcg)/2
+          (M/2 - 1) * 1/4*db * (l-xcg)/2
           where
            M = mach number,
-           db = diameter of base,
-           xcg = center of gravity, and
-           d = bullet diameter
+           l = bullet length (mm),
+           db = diameter of base (mm),
+           xcg = center of gravity (mm), and
+           d = bullet diameter (mm)
+         NOTE: conversions to m are not required as they cancel each other out
+         TODO: see Cmp, not subtracting CG from bullet length as we measure
+         CG from the base vice nose as Lahti does
         """
         M = self.mach()
         if M > 2.5: M = 2.5
         return (M/2 - 1) * (self._oabl/(4*self._db)) * (self._xcg/self._d)
-
-    def Cd0(self):
-        """
-        return the zero yaw coefficient of drag (Cd) based on Lahti 2019 eq 5,6
-        :return: Cd
-        uses Lahti 2019 eq5, 6m 7 pg 40
-         Cd = max-Cd / sqrt(M) for M >= 1 (supersonice)
-         Cd = max-Cd / 3 for M < 1 (subsonice
-         where
-          max-Cd = sqrt(d/l) d=diamaeter, l=length, and
-          M = mach number
-        NOTE: will nan if bullet length is unknown
-        """
-        M = self.mach()
-        div = np.sqrt(M) if M >= 1. else 3
-        return np.sqrt(self._d/self._oabl) / div
 
     def Cn(self):
         """
@@ -520,12 +518,26 @@ class Bullet(object):
            l = length (mm),
            d = diamter (mm), and
            db = base diameter (mm)
-        NOTE: will nan if bullet length is unknown
+        """
+        # get mach and calculate factor (sqrt(M) if M > 1, 1 otherwise)
+        M = self.mach()
+        f = 1 if M < 1 else np.sqrt(M)
+        return f * np.sqrt(self._oabl/self._d) * (self._db/self._d)
+
+    def Cd0(self):
+        """
+        return the zero yaw coefficient of drag (Cd) based on Lahti 2019 eq 5,6
+        :return: Cd
+        uses Lahti 2019 eq5, 6m 7 pg 40
+         Cd = max-Cd / sqrt(M) for M >= 1 (supersonice)
+         Cd = max-Cd / 3 for M < 1 (subsonice
+         where
+          max-Cd = sqrt(d/l) d=diamaeter, l=length, and
+          M = mach number
         """
         M = self.mach()
-        if M < 1: return np.sqrt(self._oabl/self._d)*(self._db/self._d)
-        else:
-            return np.sqrt(M)*np.sqrt(self._oabl/self._d)*(self._db/self._d)
+        _1 = np.sqrt(M) if M >= 1. else 3
+        return np.sqrt(self._d/self._oabl) / _1
 
     def Sg(self,rho=atm.RHO):
         """
@@ -546,10 +558,9 @@ class Bullet(object):
           spin-stablized bullets is Sg > 1
           For 7.62x39 we get 7.66e-08
         """
-        Cma = self.Cmp()[0]          # Cma is first element
-        S = self._A * 1e6            # convert to mm^2
+        Cma = self.Cmp()[0]
         return (np.power(self._Ix,2)*np.power(self._pi,2)) / (
-                2*rho*self._Iy*S*self._d*np.power(self._vi,2)*Cma
+                2*rho*self._Iy*self._A*(self._d*bls.MM2M)*np.power(self._vi,2)*Cma
         )
 
     def Sd(self):
@@ -566,9 +577,9 @@ class Bullet(object):
          Cd0 = zero-yaw drag coefficient, and
          Cmq, Cma are the pitch damping coefficients
         """
-        d2 = np.power(self._d,2)
-        _1 = 2 * (self.Cl() + ((self._m*d2) / (2*self._Ix)) * self.Cmm())
-        _2 = self.Cl() - self.Cd0() - ((self._m*d2)/(2*self._Iy)) * sum(self.Cmp())
+        d2 = np.power(self._d*bls.MM2M,2) # used multiple times
+        _1 = 2 * (self.Cl() + ((self._m*d2)/(2*self._Ix)) * self.Cmm())
+        _2 = self.Cl() - self.Cd0() - ((self._m*d2)/(2*self._Iy))*sum(self.Cmp())
         return _1 / _2
 
     def dynamic_stability(self,rho=atm.RHO):
@@ -871,9 +882,10 @@ class Bullet(object):
             v0 = initial velocity (m/s), and
             R = twist rate
         """
+        # TODO: should we convert the twist rate to meters? or leave as mm?
         self._vv0 = self._vcomp_i_(theta)
         self._vv = self._vv0.copy()
-        self._p0 = (2*np.pi*self._v0)/tr
+        self._p0 = (2*np.pi*self._v0)/(tr*bls.MM2M)
         self._update_vi_(np.linalg.norm(self._vv))
 
     def _update_vi_(self,v):
@@ -1086,13 +1098,16 @@ class Bullet(object):
     def _mass_props_(self):
         """
          estimates mass properties of the bullet based on bullet's length &
-         std model ratios
+         std model ratios. Estimates:
+          1. the diameter of the frustum if present,
+          2. the volume of the bullet,
+          3. the Center of Gravity (CG) of the bullet, and
+          4. the moments of inertia (axial & transverse)
          NOTE: Requires that bullet has a known diameter, length and drag model
         """
         # Given the OABL and drag model, estimate ogival, body & frustum lengths,
         # the frustum base diameter and the ogival radius - throw exception of
-        # any model
-        # that is not a tanget ogive as these are not calculate yet
+        # any model that is not a tanget ogive as these are not calculate yet
         mspec = model.mdl_specs[self._mdl]
         if mspec['ogv-shp'] != model.OGV_TAN:
             raise BulletException(
@@ -1108,8 +1123,9 @@ class Bullet(object):
 
         # get radii of components (Note for do not confuse the ogival radius ro
         # (above) with the radius of the nose's base which = the body radius
+        # convert to meters
         rc = self._d / 2  # cylinder/ogive base radius
-        rf = self._db / 2  # frustum base radius
+        rf = self._db / 2 # frustum base radius
 
         # estimate the volume, center of gravity and moments of inertia
         # 1. VOLUME estimate bullet volume by summing constituent volumes
@@ -1135,12 +1151,12 @@ class Bullet(object):
         vf = (np.pi*lf)/3 * (np.power(rc,2) + (rc*rf) + np.power(rf,2))
         f = ro / rc
         nbl = np.sqrt(2*f-1)
-        vo_r3 = np.pi*( # used to calculate ogive's center of gravity
+        vo_r3 = np.pi*( # used later to calculate ogive's center of gravity
                 (np.power(f,2) - np.power(nbl,2)/3)*nbl -
                 (np.power(f,2)*(f-1)*utils.arcsin(nbl/f,'r'))
         )
-        vo = vo_r3 * np.power(rc,3)  # complete equation to get ogive volume
-        self._vol = vo + vc + vf
+        vo = vo_r3 * np.power(rc,3)             # complete eq.of ogive volume
+        self._vol = (vo + vc + vf) * bls.MMC2MC # store as cubic m
 
         # 2. Center of Gravity - center of gravity (CG) of the bullet is measured
         # from the base of the bullet on the centerline such that in the 3d space
@@ -1197,7 +1213,10 @@ class Bullet(object):
         #   lc = length of the cylinder,
         #   lf = length of the frustum, and
         #   rb = radius of the base (top of frustum)
-        p = self._m / self._vol
+        # NOTE: we estimate density as kg/mm^3 to maintain consistency with
+        #  radii and lengths which are in millimeter. As such, need to convert
+        #  volume to cubic mm
+        p = self._m / (self._vol*bls.MC2MMC)
         mc = (np.pi * np.power(rc,2) * lc) * p
         mf = ((np.pi * lf*(np.power(rf,2) + (rf*rc) + np.power(rf,2)))/3) * p
         mo = self._m - mc - mf
@@ -1205,7 +1224,6 @@ class Bullet(object):
 
         # 3. Moments of Inertia use the sum of constituent components Boynton,
         # Wiener 2001. We will use kg-m^2 and need to convert lengths, radii
-        # to meters
         rf *= bls.MM2M
         lf *= bls.MM2M
         rc *= bls.MM2M
@@ -1309,6 +1327,6 @@ class Bullet(object):
         Iyo = (np.pi/4) * (_1 + _2 - _3)
         Iyo *= p*np.power(rc,5)
 
-        # sum the moments
+        # summing the moments
         self._Ix = Ixf + Ixc + Ixo
         self._Iy = Iyf + Iyc + Iyo

@@ -34,7 +34,7 @@ from pymsdb import PyMSDbException
 
 """
 list of the drag models (NOTE: only G1 and G7 are currently used)
- Ingalls/G1 flatbase bullet short ogive
+ Ingalls/G1 flatbase bullet short ogive (Ingalls had a shorter ogival radius)
  Aberdeen/G2 conical ogive 
  G5 tangent ogive cylinder boattail similar to G7 with short ogival radius
  G6 flat-based secant ogive cylinder
@@ -43,7 +43,6 @@ list of the drag models (NOTE: only G1 and G7 are currently used)
  GL blunt nose NOT USED 
 """
 models = ['Ingalls','G1','G2','G5','G6','G7','G8','GL']
-imodels = ['G1','G7'] # implemented models
 
 """
  defines standard model ratios to define bullet specs
@@ -56,7 +55,14 @@ imodels = ['G1','G7'] # implemented models
   frs-len = the ratio of frustrum-len/blt-len (if present)
   frs-base = diameter of the 'bottom' of the frustum
   measurements are from 
-   https://www.alternatewars.com/BBOW/Ballistics/Ext/Drag_Tables.htm 
+   McCoy 1999
+    Ingalls pg 114
+    G1 pg 119
+    G2 pg 124
+    G5 pg 130
+    G6 pg 135
+    G7 pg 140
+    G8 pg 146
 """
 
 # measurements in calibers (Cl) 1 Cl = 0.254mm of each standard model bullet

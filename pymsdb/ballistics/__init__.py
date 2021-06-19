@@ -44,9 +44,12 @@ IN2CM   = 2.54       # inches to centimeters
 CL2M = 2.54e-4
 
 # metric conversions
-MM2CM   = 0.1    # mm to cm
-MM2M    = 0.001  # mm to m
-M2MM    = 1e6    # m to mm
+MM2M    = 0.001 # mm to m
+MS2MMS  = 1e6   # m^2 to mm^2
+MMS2MS  = 1e-6  # mm^2 to m^2
+MC2MMC  = 1e9   # m^3 to mm^3
+MMC2MC  = 1e-9  # mm^3 to m^3
+KG2G    = 1000  # kilogram to gram
 
 # metric to imperial
 msd2isd = 1/703  # sectional density (SD), ballistic coefficent (BC) to imperial
