@@ -1,4 +1,4 @@
-MANUF	FULL MODEL	MODEL	VAR/CONF/GEN/SER	CATEGORY	TYPE	SUB-TYPE	FIRE_MECH	CALIBER	BRL-LEN (in)	MIN-LEN  (in)	MAX-LEN  (in)	WEIGHT (lbs)	TRG-PULL	STOCK	GRIP	ACTION	TWIST	FS (mm)	RS (mm)	SR (mm)	CYCLIC ROF	EFF ROF	EFF-RNG-AREA (m)	EFF-RNG-PT (m)	MOA	FEED-SYS	FEED-LOC	STD-CAP	CLONE	NOTES
+MANUF	FULL MODEL	MODEL	VAR/CONF/GEN/SER	CATEGORY	TYPE	SUB-TYPE	FIRE_MECH	CALIBER	BRL-LEN (in)	MIN-LEN  (in)	MAX-LEN  (in)	WEIGHT (lbs)	TRG-PULL	STOCK	GRIP	ACTION	TWIST (in)	FS (mm)	RS (mm)	SR (mm)	CYCLIC ROF	EFF ROF	EFF-RNG-AREA (m)	EFF-RNG-PT (m)	MOA	FEED-SYS	FEED-LOC	STD-CAP	CLONE	NOTES
 Intratec	Tec-9 Mini	Tec-9 Mini		Pistol	SMG		SA	9x19	2.99	10.5	10.5	2.75	6	None	HG	blowback	1:10			196.85	1000			50		mag-well:btn-release:insert-lock	forward	16, 32		
 Ingram	M-11	M-11		Pistol	SMG		SA	.380 ACP, 9x19	5.08	9.76	20.9	3.5		Folding	HG	straight-blowback					1200			50		mag-well:btn-release:insert-lock	inside	25		
 MasterPiece Arms	M-10	M-10		Pistol	SMG		SA	9x19, .45 ACP	5.75	10.7	21.57	6.26		Folding	HG	straight-blowback					1200					mag-well:btn-release:insert-lock	inside	30		
