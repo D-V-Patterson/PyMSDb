@@ -24,7 +24,7 @@ Glock	21	21		Pistol			SA	.45 ACP	4.61	8.07	8.07	1.64	6.3	N/A	HG	short recoil, lo
 Glock	21 SF	21	SF	Pistol			SA	.45 ACP	4.61	8.07	8.07	1.63	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:15.75									mag-well:btn-release:insert-lock	inside	13		
 Glock	22	22		Pistol			SA	.40 S&W	4.49	8.03	8.03	1.42	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84									mag-well:btn-release:insert-lock	inside	15		
 Glock	22 Gen4	22	Gen4	Pistol			SA	.40 S&W	4.49	8.03	8.03	1.42	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84									mag-well:btn-release:insert-lock	inside	15		
-Glock	23	23		Pistol			SA	.40 S&W	4.02	7.28	7.28	1.49	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84									mag-well:btn-release:insert-lock	inside	13		
+Glock	23	23		Pistol			SA	.40 S&W	4.02	7.28	7.28	1.49	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:9.84									mag-well:btn-release:insert-lock	inside	10, 13		
 Glock	31	31		Pistol			SA	.357	4.49	8.03	8.03	1.45	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:16									mag-well:btn-release:insert-lock	inside	13		
 Glock	32	32		Pistol			SA	.357 SIG	4.02	7.36	7.36	1.37	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:16									mag-well:btn-release:insert-lock	inside	13		
 Glock	33	33		Pistol			SA	.357	3.43	6.42	6.42	1.23	6.3	N/A	HG	short recoil, locked breach, tilting barrel	1:16									mag-well:btn-release:insert-lock	inside	9		
@@ -43,7 +43,7 @@ Remington	M1911	1911	M	Pistol			SA	.45	5	8.5	8.5	2.41		N/A	HG	short-recoil	1:16	
 Sig Sauer	P226	P226		Pistol			SA	9x19	4.49	7.7	7.7	2.13	3.09	N/A	HG	short-recoil, locked-breech	1:9.8							50		mag-well:btn-release:insert-lock	inside	10, 12, 15		based on 9x19 only
 Smith & Wesson	Model 459	Model 459		Pistol			SA	9x19	4	7.44	7.44	1.91		N/A	HG	recoil-operated										mag-well:btn-release:insert-lock	inside	14		
 Smith & Wesson	M&P	M&P		Pistol			SA	9x19, .40 S&W	4.25	7.6	7.6	1.74	6.5	N/A	HG	short-recoil, locked-breech										mag-well:btn-release:insert-lock	inside	15, 17		
-Smith & Wesson	Model 915	Model 915		Pistol			SA	9x19	4	7.38	7.38	1.78		N/A	HG											mag-well:btn-release:insert-lock	inside	15		
+Smith & Wesson	Model 915	Model 915		Pistol			SA	9x19	4	7.38	7.38	1.78		N/A	HG											mag-well:btn-release:insert-lock	inside	10, 15		
 Springfield Armory	XD	XD		Pistol			SA	9x19	4	7.2	7.2	1.63	4.71	N/A	HG		1:10									mag-well:btn-release:insert-lock	inside	16		based of compact model
 Springfield Armory	XD-M	XD	M	Pistol			SA	9x19	4.5	7	7	1.81	4.71	N/A	HG		1:10									mag-well:btn-release:insert-lock	inside	19		
 Stoeger	STLR-4	STLR-4		Pistol			SA	.22 LR	4.5	8.8	8.8	1.88		N/A	HG											mag-well:btn-release:insert-lock	inside	10		
