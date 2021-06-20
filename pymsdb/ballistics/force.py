@@ -13,7 +13,7 @@ Defines functions related to forces 'opposing' the bullet's trajectory
 #__name__ = 'drag'
 __license__ = 'GPLv3'
 __version__ = '0.0.7'
-__date__ = 'May 2021'
+__date__ = 'June 2021'
 __author__ = 'Dale Patterson'
 __maintainer__ = 'Dale Patterson'
 __email__ = 'dale.v.patterson@gmail.com'
@@ -79,12 +79,12 @@ def mFd(blt,rho=atm.RHO):
 
 def Ec(blt,lat=32.,az=90):
 	"""
-	calculates the coriolis effect on bullet
+	calculates acceleration due to the coriolis effect
 	:param blt: Bullet object
 	:param lat: latitude of firer (degrees)
 	:param az: azimuth of fire (degrees) due North = 0, east = 90
 	:return: the coriolis acceleration (array)
-	from McCoy 1999, eq 8.27 pg 178
+	from McCoy 1999, eq 8.27 pg 178 and eq. 9.20 pg 191
 	 Ec_x = 2*Omega * (-Vy*cos(L)*sin(AZ) - Vz*sin(L)
 	 Ec_y = 2*Omega * (Vx*cos(L)*sin(Az) + Vz*cos(L)*cos(AZ)
 	 Ec_z = 2*Omega * (Vx*sin(L) - Vy*cos(L)*cos(AZ))
@@ -93,11 +93,11 @@ def Ec(blt,lat=32.,az=90):
 	  L = latitude of firer (degrees), and
 	  AZ = azimuth of fire (degrees) due North = 0, east = 90
 	"""
+	x,y,z = blt.velocity # get axial components
 	return 2*atm.OMEGA * np.array(
 		[
-			-blt.v_y*utils.sin(lat)*utils.sin(az) - blt.v_z*utils.sin(lat),
-			blt.v_x*utils.cos(lat)*utils.sin(az) +
-			blt.v_z*utils.cos(lat)*utils.cos(az),
-			blt.v_x*utils.sin(lat) - blt.v_y*utils.cos(lat)*utils.cos(az)
+			-y*utils.cos(lat)*utils.sin(az) - z*utils.sin(lat),
+			x*utils.cos(lat)*utils.sin(az) + z*utils.cos(lat)*utils.cos(az),
+			x*utils.sin(lat) - y*utils.cos(lat)*utils.cos(az)
 		],np.double
 	)
