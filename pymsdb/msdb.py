@@ -59,7 +59,7 @@ where
       A=Army, N=Navy, F=Air Force, M=Marines, C=Coast Guard, G=National Guard, 
       X=None,U=Unknown
     }
-    criminal-rec = {U=Unknown, N=No, Y=Yes}
+    leo-knowledge = {U=Unknown, N=No, Y=Yes}
     mental-health = {
       U=Unknown,N=None,D=Diagnosed,S=Signs/Symptoms,
       P=Post-mortem/Post Incident  Diagnosis
@@ -271,7 +271,7 @@ sht_demo_race = [k for k in sht_demo_c2l['race']]
 sht_demo_rel = [k for k in sht_demo_c2l['religion']]
 sht_demo_ed_lvl = [k for k in sht_demo_c2l['ed-lvl']]
 sht_demo_mil = [k for k in sht_demo_c2l['military']]
-sht_demo_cri_rec = [k for k in sht_demo_c2l['criminal-rec']]
+sht_demo_cri_rec = [k for k in sht_demo_c2l['leo-knowledge']]
 sht_demo_men_hlt = [k for k in sht_demo_c2l['mental-health']]
 sht_demo_subs_use = [k for k in sht_demo_c2l['substance-use']]
 
@@ -2307,7 +2307,7 @@ class MSDB(object):
                      'religion':l,
                      'ed-lvl':e,
                      'military':m,
-                     'criminal-rec':c,
+                     'leo-knowledge':c,
                      'mental-health':h,
                      'substance-use':s}
                 )
@@ -2545,7 +2545,7 @@ class MSDB(object):
                 s['religion'],
                 s['ed-lvl'],
                 s['military'],
-                s['criminal-rec'],
+                s['leo-knowledge'],
                 s['mental-health'],
                 s['substance-use']
             )
