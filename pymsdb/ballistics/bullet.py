@@ -454,7 +454,7 @@ class Bullet(object):
 
     def Cmp(self):
         """
-        calculates the pitch damping moment coefficient
+        calculates the pitch damping moment coefficients
         :return: tuple of the pitch damping moment coefficients
           Cma = coefficient due to rate of change of angle of attack alpha, and
           Cmq = coefficient due to transverse angular velocity
