@@ -12,7 +12,7 @@ Defines caliber dataset reading/writing and the Caliber class
 
 #__name__ = 'bullet'
 __license__ = 'GPLv3'
-__version__ = '0.1.7'
+__version__ = '0.1.7.1'
 __date__ = 'June 2021'
 __author__ = 'Dale Patterson'
 __maintainer__ = 'Dale Patterson'
@@ -48,6 +48,9 @@ TODO:
  18. For ke, momentum do we want to round or not?
  19. round off errors
  20. Find equation for barrel length effect on initial velocity, perhaps Le Duc
+ 21. Have seen sectional density (SD) defined as the (1) ratio of mass to cross-
+  sectional area and (2) ratio of mass to the square of the diameter. Currently
+  using 2, should this be kept as is or changed. 
 """
 
 class Bullet(object):
@@ -79,6 +82,9 @@ class Bullet(object):
       momentum = (kg*m/s)
      Bullets additionally have a velocity vector which consists of the axial
      components (x,y,z) of velocity and position = (x,y,z)
+     Properties will be returned in the standard units of measurements kilogram,
+     meter by default
+
      Adopting the coordinate system of McCoy 1999, Figure 5.1
 
          y=elevation
@@ -181,7 +187,7 @@ class Bullet(object):
         self.mdl = mdl
 
     def reset(self):
-        """ resets bullet to initial state (immediately prior to fire)  """
+        """ resets bullet to initial state (immediately prior to fire) """
         # set elpased time back and steps to empty
         self._t = np.double(0.)
         self._ts = []
@@ -195,20 +201,20 @@ class Bullet(object):
         self._vi = self._v0
         self._pi = self._p0 = np.nan
 
-    @property
+    @property # initial/muzzle velocity (m/s)
     def name(self): return self._name
 
-    @property
-    def v_0(self): return self._v0 # initial/muzzle velocity
+    @property # current velocity (m/s)
+    def v_0(self): return self._v0
 
-    @property
-    def v_i(self): return self._vi # current velocity
+    @property # current velocity (m/s)
+    def v_i(self): return self._vi
 
-    @property
-    def p_0(self): return self._p0 # initial spin rate
+    @property # initial spin rate (radians/s)
+    def p_0(self): return self._p0
 
-    @property
-    def p_i(self): return self._pi # current spin rate
+    @property # current spin rate (radians/s)
+    def p_i(self): return self._pi
 
     @property
     def mdl(self): return self._mdl
@@ -273,34 +279,61 @@ class Bullet(object):
     @property
     def grains(self): return self._w
 
-    @property
+    @property # (kg)
     def mass(self): return self._m
 
-    @property
+    @property # sectional density (kg/m^2)
     def SD(self): return self._SD
 
-    @property
+    @property # cross sectional area (m^2)
     def A(self): return self._A
 
-    @property
-    def d(self): return self._d
+    @property # diameter (m)
+    def d(self): return self._d*bls.MM2M
 
-    @property
-    def oabl(self): return self._oabl
+    @property # diameter (mm)
+    def d_mm(self): return self._d
+
+    @property # radius (m)
+    def r(self): return self.d/2
+
+    @property # diameter of base (diameter of frustum) (m)
+    def db(self): return self._db*bls.MM2M
+
+    @property # diameter of base (diameter of frustum) (mm)
+    def db_mm(self): return self._db
+
+    @property # radius of base (radius of frustum) (mm)
+    def rb(self): return self.db/2
+
+    @property # overal length (including cartridge) (m)
+    def oal(self): return self._oal*bls.MM2M
+
+    @property # overal length (includeing cartridge) (mm)
+    def oal_mm(self): return self._oal
+
+    @property # overal length of bullet (m)
+    def oabl(self): return self._oabl*bls.MM2M
+
+    @property # overal length of bullet (mm)
+    def oabl_mm(self): return self._oabl
 
     @property
     def charge(self): return self._cg
 
-    @property
-    def db(self): return self._db
+    @property # x-dimension of center of gravity (m)
+    def xcg(self): return self._xcg*bls.MM2M
 
-    @property
-    def oal(self): return self._oal
+    @property # x-dimension of center of gravity (mm)
+    def xcg_mm(self): return self._xcg
 
-    @property
-    def xcg(self): return self._xcg # x-dimension of center of gravity
+    @property # axial moment of inertia
+    def Ix(self): return self._Ix
 
-    @property
+    @property # transvers moment of inertia
+    def Iy(self): return self._Iy
+
+    @property # estimated volume (m^3)
     def volume(self): return self._vol
 
 #### OUTPUT
@@ -377,8 +410,7 @@ class Bullet(object):
           See SD, the BC is in kg/m^2 whereas BCs are published by
            ft/in^2 - to convert this BC to imperial, divide by 703
         """
-        # TODO: these seem off
-        return self._m/(self.i()*np.power(self._d*bls.MM2M,2))
+        return self._m/(self.i()*np.power(self.d,2))
 
     def i(self):
         """
@@ -449,18 +481,16 @@ class Bullet(object):
         TODO: Lahti measures CG from the nose of the bullet, we measure
          from the base so we are not subtracting the xcg from the length
         """
-        # since A is in m^2 and volume is in m^3 convert, xcg, d to meters
-        xcg = self._xcg*bls.MM2M                   # m
-        d = self._d*bls.MM2M                       # m
-        Sb = np.pi*np.power(self._db*bls.MM2M/2,2) # m^2
+        # calculate frustum base area
+        Sb = np.pi*np.power(self.rb,2) # m^2
 
         # get the mach number (set to 0.5 if less than 0.5)
         M = self.mach()
         if M < 0.5: M = 0.5 # use 0.5 for any mach < 0.5
 
         # pre-calculated commonalitys of eq 9 & 10 and eq 12 & 13
-        _1 = (self._vol - Sb*xcg) / (self.A*d)
-        _2 = -self.Cn()*np.power(xcg/d,2)
+        _1 = (self._vol - Sb*self.xcg) / (self.A*self.d)
+        _2 = -self.Cn()*np.power(self.xcg/self.d,2)
 
         # factors of eq 9 & 10, and of eq 12 & 13 mach dependent
         if M > 1.:
@@ -549,12 +579,13 @@ class Bullet(object):
         """
         Cma = self.Cmp()[0]
         return (np.power(self._Ix,2)*np.power(self._pi,2)) / (
-                2*rho*self._Iy*self._A*(self._d*bls.MM2M)*np.power(self._vi,2)*Cma
+                2*rho*self._Iy*self._A*self.d*np.power(self._vi,2)*Cma
         )
 
     def Sd(self):
         """
-        calculates the dynamic stability parameter
+        calculates the dynamic stability parameter NOT TO BE CONFUSED WITH
+        SD = SECTIONAL DENSITY
         :return: the dynamic stability parameter
         use Lahti 2019, eq 16
          Sd = 2*(Cla + (m*d^2)/(2*Ix)*Cmm) /
@@ -566,7 +597,7 @@ class Bullet(object):
          Cd0 = zero-yaw drag coefficient, and
          Cmq, Cma are the pitch damping coefficients
         """
-        d2 = np.power(self._d*bls.MM2M,2) # used multiple times
+        d2 = np.power(self.d,2) # used multiple times
         _1 = 2 * (self.Cl() + ((self._m*d2)/(2*self._Ix)) * self.Cmm())
         _2 = self.Cl() - self.Cd0() - ((self._m*d2)/(2*self._Iy))*sum(self.Cmp())
         return _1 / _2
@@ -582,7 +613,7 @@ class Bullet(object):
 
 #### FIRING METHODS
 
-    def setup(self,h=0.,theta=0.,phi=0.,tr=254,bl=None):
+    def chamber(self,h=0.,theta=0.,phi=0.,tr=254,bl=None):
         """
         sets position, velocity vectors and time to instaneous time of fire
         immediately preceding the bullet leaving the muzzle
@@ -743,7 +774,7 @@ class Bullet(object):
         # muzzle velocity i.e v_x >= v_x0/2
         # TODO: have to figure out stopping at poi y-position in cases where
         #  the shooter is firing below the target
-        self.setup(h,theta,phi,bt,bl)
+        self.chamber(h,theta,phi,bt,bl)
         while self._vp[bls.IX] <= poi[bls.IX] and self._vi >= self._v0/2:
             self._ts.append(
                 (self._t,np.linalg.norm(self._vv),tuple(self._vp),tuple(self._vv))
@@ -1071,7 +1102,7 @@ class Bullet(object):
           Meaning the vecotrs must be subtracted
           Because mFd in force.py is negative
         """
-        return force.mFd(self) * self._vi*(self._vv-vw) + force.gravity()
+        return -force.mFd(self) * self._vi*(self._vv-vw) + force.gravity()
 
     def _hooke_cd_(self):
         """
@@ -1289,8 +1320,6 @@ class Bullet(object):
         #    m = mass of cylinder (kg),
         #    r = radius of cylinder (m), and
         #    h = height of cylinder (m)
-        # rc *= bls.MM2M
-        # lc *= bls.MM2M
         Ixc = 0.5 * mc * np.power(rc,2)
         Iyc = mc/12 * (3*np.power(rc,2) + np.power(lc,2))
 
