@@ -337,14 +337,12 @@ i2dow =  [None,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Su
 """
  # TODO: 
   7. Add something about 'HCM' based on a by type/subtype criteria
-  9. How to look at the deaths low to high associated with AT firearm vs non-AT firearm
-   i.e. Waffle House Shooting had an AR-15 but only 6 total victims (4 dead, 2 wounded)
-    is on the low-end vs Virginia Tech shooting which used pistols and was on the
-    high end
-  10. need to annotate those shotguns that do not have a magazine
+  9. How to look at the deaths low to high associated with AT firearm vs non-AT 
+   firearm i.e. Waffle House Shooting had an AR-15 but only 6 total victims (4 
+   dead, 2 wounded) is on the low-end vs Virginia Tech shooting which used 
+   pistols and was on the high end
   19. Figure something out for primary notation for two-shooter incidents
   20. Add support to process acquistion dates in incident notes. (see Bruce Pardo)
-  24. Add msr capability of using decade pop based on year of incident
   25. Add support in MAGAZINE(S) column to specify unknown number of mags (see Camden)
    i.e. ?x 8-rnd
   26. need to look at rounds fired, primary_firearm for validity 
@@ -352,11 +350,13 @@ i2dow =  [None,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Su
     'USPS Shooting', both firerarms were 1911A
   28. Finish caliber reading/processing
   29. Per capita firearms in the us outnumber people
-  30. fatality rate killed / total shot
+  30. fatality rate = killed / total shot
   32. need regex for acquisition dates that cannot be tied to specific weapons
    - regex done but need functionality to capture it. to use regex do
     ad = re_acq_date.search(test).groups()[0]
     dates = re_acq_date_term.findall(ad)
+  33. add a 'flatten' functionality that will write the msdb to tsv/csv without
+   subrows for weapons
 """
 
 # data manip functions for hists/pivot
