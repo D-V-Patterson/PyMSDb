@@ -29,6 +29,19 @@ import pymsdb.ballistics.atmosphere as atm
    based off of blt's current elevation although I don't think this will play
    much roll
     i. this implies the need to know the shooter's starting elevation as well 
+  2. Forces:
+   a. Magnus effect - 
+      i. need p = (Ix/Iy) * (h dot x) don't have h or x but we do have the spin
+       rate as calculated from Lahti. Will this suffice
+      ii. there is a magnus force coefficient and a magnus momment coefficient,
+      McCoy 1999, pg 189 See McCoy 1964, pg 20 a Magnus moment will be produced 
+      if the line of action of the magnus force does not pass through the center 
+      of mass of projectile
+   b. As for Magnus there is a pitch damping force and pitch damping moment where
+    Cnq + Cna = pitch damping force coefficient and
+    Cmq + Cma = pitch damping moment coefficient 
+   c. spin damping force requires spin damping coefficient
+   d. rolling moment force requires rolling moment coefficient
 """
 
 #### GRAVITY
@@ -60,20 +73,92 @@ def Fd(blt,rho=atm.RHO):
 
 def mFd(blt,rho=atm.RHO):
 	"""
-	 calculates the force of drag (Fd) magnitude given projectiles drag coefficient,
-	 cross-sectional area, velocity and air density
+	 calculates the force of drag (Fd) magnitude given the air density and the
+	 bullet's drag coefficient, cross-sectional area, velocity, mass
 	:param blt: the Bullet object
-	:param rho: air density (kg/m3)
+	:param rho: air density (kg/m^3)
 	:return: magnitude of the force of drag
-	uses Fd = (-0.5 * Cd * rho * A) / mass
-	 McCoy 1999, Eq 5.7
+	uses Fd = (-0.5 * Cd * rho * S) / m
+	 McCoy 1999, Eq 5.7 (see also pg 190)
 	 where
 	  Cd = coefficient of drag,
-	  rho = air density
-	  A = cross-sectional area
-	  Fd in (m I think)
+	  rho = air density,
+	  S = cross-sectional area, and
+	  m = mass
 	"""
-	return -(0.5*blt.Cd()*rho*blt.A)/blt.mass
+	# TODO:  see mFl and others, conform this (include velocity) or should we
+	#  conform below to this and multiply velocity in bullet?
+	return (0.5*blt.Cd()*rho*blt.A)/blt.mass
+
+#### LIFT
+
+def mFl(blt,rho=atm.RHO):
+	"""
+	 calculates the force of lift (Fl) magnitude given the air density and the
+	 bullet's lift coefficient, cross-sectional area, velocity, mass
+	:param blt: Bullet object
+	:param rho: air density (kg/m^3)
+	:return: force of lift
+	Uses McCoy 1999, eq 9.10 - 9.16 pg 190
+	 Fl = rho * v * S * Cl / 2 * m
+	  where
+	   rho = air density (kg/m^3),
+	   v = velocity magnitude (m/s),
+	   S = cross-sectional area (m^2),
+	   Cl = coefficient of lift,
+	   m = mass (kg)
+	"""
+	return (0.5*rho*blt.v_i*blt.A*blt.Cl()) / blt.mass
+
+#### MAGNUS FORCE
+
+def mFm(blt,rho=atm.RHO):
+	"""
+	 calculates the Magnus Force magnitude given the air density and the bullet's
+	 magnus force coefficient, velocity, cross-sectional area, diameter and axial
+	 spin rate
+	:param blt: Bullet object
+	:param rho: air density
+	:return: the magnus force
+	Uses McCoy 1999, eq 9.10 - 9.16 pg 190
+	 Fm = rho * S * d * Cm * p / 2 * m
+	  where
+	   rho = air density (kg/m^3),
+	   S = cross-sectional area (m^2),
+	   d = diameter (m),
+	   Cn = magnus force coefficient,
+	   p = axial spin rate (radians/s), and
+	   m = mass
+	"""
+	# TODO: using the spin rate from Lahti vice McCoy (Ix/Iy) * (h dot x)
+	return (0.5*rho*blt.A*blt.d*blt.Cmm()*blt.p_i) / blt.mass
+
+# TODO: magnus moment, will need magnus moment coefficient
+
+#### PITCH DAMPING
+
+# TODO: see Lahit, McCoy the below Cmp() returns the pitch damping moment
+#  coefficients and not the pitch damping force coefficient
+#def mFpd(blt,rho=atm.RHO):
+#	"""
+#	 calculates the pitch damping force given the air density and the bullet's
+#	 pitch damping coefficients, velocity, cross-sectional area, diameter and
+#	 mass
+#	:param blt: Bullet object
+#	:param rho: air density
+#	:return: pitch damping force
+#	 Uses McCoy 1999, eq 9.10 - 9.16 pg 190
+#	  Fpd = rho * v * S * d * (Cnq + Cna) / 2 * ma
+#	  where
+#	   rho = air density (kg/m^3),
+#	   v = velocity (m/s),
+#	   S = cross-sectional area (m^2),
+#	   d = diameter (m),
+#	   Cnq, Cna = pitch damping coefficients, and
+#	   m = mass
+#	"""
+#	return (0.5*rho*blt.v_i*blt.A*blt.d*sum(blt.Cmp())) / blt.mass
+
 
 #### CORIOLIS
 
