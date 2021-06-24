@@ -31,6 +31,7 @@ import pymsdb.ballistics.atmosphere as atm
     i. this implies the need to know the shooter's starting elevation as well 
   2. Forces/Moments:
    b. overturning moment (requires pitching/overturning moment coefficient)
+  3. See McCoy eq 9.18, do we need this?
 """
 
 """
