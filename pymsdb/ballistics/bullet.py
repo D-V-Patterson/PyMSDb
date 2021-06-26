@@ -12,7 +12,7 @@ Defines caliber dataset reading/writing and the Caliber class
 
 #__name__ = 'bullet'
 __license__ = 'GPLv3'
-__version__ = '0.1.7.1'
+__version__ = '0.1.6'
 __date__ = 'June 2021'
 __author__ = 'Dale Patterson'
 __maintainer__ = 'Dale Patterson'
@@ -28,7 +28,7 @@ import pymsdb.ballistics.model as model
 import pymsdb.ballistics.atmosphere as atm
 import pymsdb.utils as utils
 from pymsdb import PyMSDbException
-from pymsdb.ballistics.anthropometry import S_H
+from pymsdb.ballistics.anthropometry import S_H, W_HM
 
 class BulletException(PyMSDbException):
     def __init__(self,msg): super().__init__(msg)
@@ -41,23 +41,21 @@ TODO:
    estimates tof, elevation, zero angle and fall angle compare favorably to 
    trajectory results
   6. See above, also add range when given angle of fire
+  7. trajectory could become unwieldy with multiple parameters: could use
+   dicts such as
+   firearm = {height,front-sight height,barrel len,barrel,twist,angle of fire}
+   target = {height to hit target, range from firearm to target etc}
+   functional = {time increment, ???}
+   atmospheric conditions = {wind vector,elevation,temperature etc} 
+   these could also be classes or compiled into lists with standarized indexes
   8. Cd is currently using method that does not specify ballistic models
   9. Want range based functions vice time (requires integration?) 
  11. continue allowing return of nan in Lahti defined coefficients? or return None
   or throw error?
+ 15. add option to set/configure windage angle
  18. For ke, momentum do we want to round or not?
  19. round off errors
  20. Find equation for barrel length effect on initial velocity, perhaps Le Duc
- 21. Have seen sectional density (SD) defined as the (1) ratio of mass to cross-
-  sectional area and (2) ratio of mass to the square of the diameter. Currently
-  using 2, should this be kept as is or changed. 
- 22. Figure out what to do with wind vector (see McCoy 1999, eq 9.22 pg 191
- 23. After adding windage angle, should we go back to estimating functions like
-  tof and add it or keep as 2d estimating functions
- 24. Look at IJCSM1405Gritzapisetal1..pd.pdf sec 9 for aerodynamic jump deflection
-  equation
- 25. When not specified by user, set barrel twist rate based on handgun or long gun
-  type of ammo
 """
 
 class Bullet(object):
@@ -89,9 +87,6 @@ class Bullet(object):
       momentum = (kg*m/s)
      Bullets additionally have a velocity vector which consists of the axial
      components (x,y,z) of velocity and position = (x,y,z)
-     Properties will be returned in the standard units of measurements kilogram,
-     meter by default
-
      Adopting the coordinate system of McCoy 1999, Figure 5.1
 
          y=elevation
@@ -146,13 +141,8 @@ class Bullet(object):
          _t = <double> 'current' time (s)
          _t = <double> 'current' time (s)
          _vi = <double> 'current' velocity at time _t (m/s)
-         _vv0, _vvi = <3D vector> velocity components (m/s) on the x,y,z axis
-          at initial and time t = i
-         _vp0,_vpi = <3D vector> 'current' position (m) on the x,y,z axis at
-          initial and time t = i
-         _vbx, _vby, _vbz = (3D vector>s unit vectors along the bullets axes
-          which are used to calculate the angular momentum and orginate at
-          (xcg,0,0) (see McCoy 1999, Fig 9.1, sections 9.2 and 9.3)
+         _vv = <3D vector> 'current' velocity components (m/s) on the x,y,z axis
+         _vp = <3D vector> 'current' position (m) on the x,y,z axis
          _p0 = <double> initial spin rate (radians/s) defined in Lahti 2019 eq 1
          _pi = <double> current spin rate (radians/s) defined in Lahti 2019 eq 2
          _vol = <double> estimated volume of the bullet (mm^3)
@@ -185,13 +175,13 @@ class Bullet(object):
         self._Ix = None
         self._Iy = None
         self._t = 0.
-        self._p0 = None  # spin rate at time t = 0
-        self._pi = None  # spin rate at time t = i
-        self._vp0 = None # position vector at time t = 0
-        self._vpi = None # position vector at time t = 1
-        self._vv0 = None # velocity vector at time t = 0
-        self._vvi = None # velocity vector at time t = i
-        self._vi = None # velocity magnitude at time t = i
+        self._vi = None # at time t = i
+        self._vp = None # at time t = i
+        self._vv = None # at time t = i
+        self._vp0 = None # at time t = 0
+        self._vv0 = None # at time t = 0
+        self._p0 = None # spin rate at time t = 0
+        self._pi = None # spin rate at time t = i
         self._ts = []
 
         # reset the bullet and set the model
@@ -199,7 +189,7 @@ class Bullet(object):
         self.mdl = mdl
 
     def reset(self):
-        """ resets bullet to initial state (immediately prior to fire) """
+        """ resets bullet to initial state (immediately prior to fire)  """
         # set elpased time back and steps to empty
         self._t = np.double(0.)
         self._ts = []
@@ -208,25 +198,25 @@ class Bullet(object):
         # reset & spin rate is not a number
         self._vp0 = np.array([0.,0.,0.],np.double)
         self._vv0 = np.array([0.,0.,0.],np.double)
-        self._vpi = np.array([0.,0.,0.],np.double)
-        self._vvi = np.array([0.,0.,0.],np.double)
-        self._vi = np.nan
+        self._vp = np.array([0.,0.,0.],np.double)
+        self._vv = np.array([0.,0.,0.],np.double)
+        self._vi = self._v0
         self._pi = self._p0 = np.nan
 
-    @property # initial/muzzle velocity (m/s)
+    @property
     def name(self): return self._name
 
-    @property # current velocity (m/s)
-    def v_0(self): return self._v0
+    @property
+    def v_0(self): return self._v0 # initial/muzzle velocity
 
-    @property # current velocity (m/s)
-    def v_i(self): return self._vi
+    @property
+    def v_i(self): return self._vi # current velocity
 
-    @property # initial spin rate (radians/s)
-    def p_0(self): return self._p0
+    @property
+    def p_0(self): return self._p0 # initial spin rate
 
-    @property # current spin rate (radians/s)
-    def p_i(self): return self._pi
+    @property
+    def p_i(self): return self._pi # current spin rate
 
     @property
     def mdl(self): return self._mdl
@@ -247,43 +237,43 @@ class Bullet(object):
         self._mass_props_()
 
     @property
-    def position(self): return self._vpi
+    def pos(self): return self._vp
 
     @property
-    def velocity(self): return self._vvi
+    def velocity(self): return self._vv
 
     @property
-    def x(self): return self._vpi[bls.IX] # 'current' horizontal position
+    def x(self): return self._vp[bls.IX] # 'current' horizontal position
 
     @property
     def x_0(self): return self._vp0[bls.IX] # initial horizontal position
 
     @property
-    def y(self): return self._vpi[bls.IY] # 'current' vertical position
+    def y(self): return self._vp[bls.IY] # 'current' vertical position
 
     @property
     def y_0(self): return self._vp0[bls.IY]  # initial vertical position
 
     @property
-    def z(self): return self._vpi[bls.IZ] # 'current' windage distance
+    def z(self): return self._vp[bls.IZ] # 'current' windage distance
 
     @property
-    def z_0(self): return self._vp0[bls.IZ]  # initial windage position
+    def z_0(self): return self._vp[bls.IZ]  # initial windage position
 
     @property
-    def v_x(self): return self._vvi[bls.IX] # 'current' x-component of velocity
+    def v_x(self): return self._vv[bls.IX] # 'current' x-component of velocity
 
     @property
     def v_x0(self): return self._vv0[bls.IX]  # initial x-component of velocity
 
     @property
-    def v_y(self): return self._vvi[bls.IY] # 'current' y-component of velocity
+    def v_y(self): return self._vv[bls.IY] # 'current' y-component of velocity
 
     @property
     def v_y0(self): return self._vv0[bls.IY]  # initial y-component of velocity
 
     @property
-    def v_z(self): return self._vvi[bls.IZ] # 'current' x-component of velocity
+    def v_z(self): return self._vv[bls.IZ] # 'current' x-component of velocity
 
     @property
     def v_z0(self): return self._vv0[bls.IZ]  # initial x-component of velocity
@@ -291,61 +281,34 @@ class Bullet(object):
     @property
     def grains(self): return self._w
 
-    @property # (kg)
+    @property
     def mass(self): return self._m
 
-    @property # sectional density (kg/m^2)
+    @property
     def SD(self): return self._SD
 
-    @property # cross sectional area (m^2)
+    @property
     def A(self): return self._A
 
-    @property # diameter (m)
-    def d(self): return self._d*bls.MM2M
+    @property
+    def d(self): return self._d
 
-    @property # diameter (mm)
-    def d_mm(self): return self._d
-
-    @property # radius (m)
-    def r(self): return self.d/2
-
-    @property # diameter of base (diameter of frustum) (m)
-    def db(self): return self._db*bls.MM2M
-
-    @property # diameter of base (diameter of frustum) (mm)
-    def db_mm(self): return self._db
-
-    @property # radius of base (radius of frustum) (mm)
-    def rb(self): return self.db/2
-
-    @property # overal length (including cartridge) (m)
-    def oal(self): return self._oal*bls.MM2M
-
-    @property # overal length (includeing cartridge) (mm)
-    def oal_mm(self): return self._oal
-
-    @property # overal length of bullet (m)
-    def oabl(self): return self._oabl*bls.MM2M
-
-    @property # overal length of bullet (mm)
-    def oabl_mm(self): return self._oabl
+    @property
+    def oabl(self): return self._oabl
 
     @property
     def charge(self): return self._cg
 
-    @property # x-dimension of center of gravity (m)
-    def xcg(self): return self._xcg*bls.MM2M
+    @property
+    def db(self): return self._db
 
-    @property # x-dimension of center of gravity (mm)
-    def xcg_mm(self): return self._xcg
+    @property
+    def oal(self): return self._oal
 
-    @property # axial moment of inertia
-    def Ix(self): return self._Ix
+    @property
+    def xcg(self): return self._xcg # x-dimension of center of gravity
 
-    @property # transvers moment of inertia
-    def Iy(self): return self._Iy
-
-    @property # estimated volume (m^3)
+    @property
     def volume(self): return self._vol
 
 #### OUTPUT
@@ -356,13 +319,11 @@ class Bullet(object):
         :param i: first step
         :param j: last step use -1 for last element and None to print only at i
         """
-        idx = 0 # step counter
-        strf = "({}): t={:.2f}. Vel.= {:.1f}. Pos: (x={:.2f},y={:.2f},z={:.2f})" \
-               " and Vel: (x={:.3f},y={:.3f},z={:.3f})."
+        strf = "At time t={:.2f}. Vel.= {:.1f}. Pos: (x={:.2f},y={:.2f},z={:.2f})" \
+               " and Vel: (x={:.1f},y={:.1f},z={:.1f})."
         if j is None:
             print(
                 strf.format(
-                    idx,
                     self._ts[i][0],
                     self._ts[i][1],
                     self._ts[i][2][bls.IX],
@@ -378,7 +339,6 @@ class Bullet(object):
         for i in range(i,j):
             print(
                 strf.format(
-                    idx,
                     self._ts[i][0],
                     self._ts[i][1],
                     self._ts[i][2][bls.IX],
@@ -389,7 +349,6 @@ class Bullet(object):
                     self._ts[i][3][bls.IZ],
                 )
             )
-            idx += 1
 
 #### CALCULABLE ATTRIBUTES
 # change w.r.t velocity etc
@@ -422,7 +381,8 @@ class Bullet(object):
           See SD, the BC is in kg/m^2 whereas BCs are published by
            ft/in^2 - to convert this BC to imperial, divide by 703
         """
-        return self._m/(self.i()*np.power(self.d,2))
+        # TODO: these seem off
+        return self._m/(self.i()*np.power(self._d*bls.MM2M,2))
 
     def i(self):
         """
@@ -466,7 +426,7 @@ class Bullet(object):
 
     def Cmp(self):
         """
-        calculates the pitch damping moment coefficients
+        calculates the pitch damping moment coefficient
         :return: tuple of the pitch damping moment coefficients
           Cma = coefficient due to rate of change of angle of attack alpha, and
           Cmq = coefficient due to transverse angular velocity
@@ -493,16 +453,18 @@ class Bullet(object):
         TODO: Lahti measures CG from the nose of the bullet, we measure
          from the base so we are not subtracting the xcg from the length
         """
-        # calculate frustum base area
-        Sb = np.pi*np.power(self.rb,2) # m^2
+        # since A is in m^2 and volume is in m^3 convert, xcg, d to meters
+        xcg = self._xcg*bls.MM2M                   # m
+        d = self._d*bls.MM2M                       # m
+        Sb = np.pi*np.power(self._db*bls.MM2M/2,2) # m^2
 
         # get the mach number (set to 0.5 if less than 0.5)
         M = self.mach()
         if M < 0.5: M = 0.5 # use 0.5 for any mach < 0.5
 
         # pre-calculated commonalitys of eq 9 & 10 and eq 12 & 13
-        _1 = (self._vol - Sb*self.xcg) / (self.A*self.d)
-        _2 = -self.Cn()*np.power(self.xcg/self.d,2)
+        _1 = (self._vol - Sb*xcg) / (self.A*d)
+        _2 = -self.Cn()*np.power(xcg/d,2)
 
         # factors of eq 9 & 10, and of eq 12 & 13 mach dependent
         if M > 1.:
@@ -591,13 +553,12 @@ class Bullet(object):
         """
         Cma = self.Cmp()[0]
         return (np.power(self._Ix,2)*np.power(self._pi,2)) / (
-                2*rho*self._Iy*self._A*self.d*np.power(self._vi,2)*Cma
+                2*rho*self._Iy*self._A*(self._d*bls.MM2M)*np.power(self._vi,2)*Cma
         )
 
     def Sd(self):
         """
-        calculates the dynamic stability parameter NOT TO BE CONFUSED WITH
-        SD = SECTIONAL DENSITY
+        calculates the dynamic stability parameter
         :return: the dynamic stability parameter
         use Lahti 2019, eq 16
          Sd = 2*(Cla + (m*d^2)/(2*Ix)*Cmm) /
@@ -609,7 +570,7 @@ class Bullet(object):
          Cd0 = zero-yaw drag coefficient, and
          Cmq, Cma are the pitch damping coefficients
         """
-        d2 = np.power(self.d,2) # used multiple times
+        d2 = np.power(self._d*bls.MM2M,2) # used multiple times
         _1 = 2 * (self.Cl() + ((self._m*d2)/(2*self._Ix)) * self.Cmm())
         _2 = self.Cl() - self.Cd0() - ((self._m*d2)/(2*self._Iy))*sum(self.Cmp())
         return _1 / _2
@@ -625,57 +586,30 @@ class Bullet(object):
 
 #### FIRING METHODS
 
-    def chamber(self,**kwargs):
-    #def chamber(self,h=0.,theta=0.,phi=0.,tr=254,bl=None):
-        """
-        based on McCoy 1999 section 9.3, sets initial conditions for trajectory
-        calculations:
-         initial velocity vector
-         initial spin rate
-         bullet's axial position vector
-         bullet's world position vector
-        for time = 0 immediately at the moment of fire
-        :param kwargs: keywords arguments as follows
-         height: height of firearm at time of fire (m) default is average height
-          of a shoulder fired firearm
-         elev_angle elevation angle i.e. y-axis (degrees) default is tangetial
-         to earth = 0
-         windage_angle: windage angle i.e. z-axis (degrees) default is 0
-         pitch_angle: the pitch angle at gun muzzle
-         yaw_angle: the yaw angle at gun muzzle
-         brl_length: (NOT USED YET) the length of the barrel (mm)
-         brl_twist: the twist rate (mm) of the barrel default is dependent on
-          the type of bullet handgun vs long gun
-        NOTE:
-         For spin rate, uses Lahti 2019, eq 1
-          p0 = 2*pi*v0/R
-           where
-            v0 = initial velocity (m/s), and
-            R = twist rate
-        """
-        # set up variables to default unless specified in kwargs
-        h = kwargs['height'] if 'height' in kwargs else S_H
-        theta = kwargs['elev_angle'] if 'elev_angle' in kwargs else 0.
-        phi = kwargs['windage_angle'] if 'windage_angle' in kwargs else 0.
-        alpha = kwargs['pitch_angle'] if 'pitch_angle' in kwargs else 0.
-        beta = kwargs['yaw_angle'] if 'yaw_angle' in kwargs else 0.
-        bt = kwargs['brl_twist'] if 'brl_twist' in kwargs else 254
-        #bl = kwargs['brl_len'] if 'brl_len' in kwargs else None
+    """
+     IAW McCoy the current firing methods below should only be used out to the
+     range at which the remaining velocity is at least 1/2 of the muzzle 
+     velocity i.e v_x >= v_x0/2
+    """
 
+    def setup(self,h=0.,theta=0.,tr=254):
+        """
+        sets position, velocity vectors and time to instaneous time of fire
+        immediately preceding the bullet leaving the muzzle
+        :param h: the initial elevation of the firearm (m)
+        :param theta: the angle of fire (degrees)
+        :param tr: twist rate (mm) i.e. 1:8 = 8*25.4 default is 1:10" or 1:254mm
+        :return:
+         #TODO: add atmopsheric conditions
+        """
         # 1) reset the bullet to 'empty/starting' state.
-        # 2) Set the initial and current position vectors to (0,h,0).
-        # 3) Set current velocity magnitude
-        # 4) set initial and current velocity vectors
-        # 5) Set initial and current spin rate
-        # 6) set x,y,z unit vectors need pitch angle and yaw angle
+        # 2) Set the initial/current position vectors to (0,h,0).
+        # 3) set initial and current velocity vectors as well as initial speed
+        # 4) Set initial/current spin rate
         self.reset()
         self._vp0[bls.IY] = h
-        self._vpi = self._vp0.copy()
-        self._vi = self._v0
-        self._vv0 = self._vv_3d_(theta,phi)
-        self._vvi = self._vv0.copy()
-        self._p0 = (2*np.pi*self._v0)/(bt*bls.MM2M)
-        self._pi = self._p0
+        self._vp = self._vp0.copy()
+        self._set_initial_(tr,theta)
 
     def zero_angle(self,fs,x):
         """
@@ -718,7 +652,7 @@ class Bullet(object):
            v_x0 = calculated above (m/s), and
            v_0 = muzzle velocity (m/s)
         """
-        vx0 = self._vv_3d_(theta,0)[bls.IX]
+        vx0 = self._vx_i_(theta)
         return (x/vx0) * np.sqrt(vx0/self._vx_k3_(x,theta))
 
     def elevation(self,x,h,theta):
@@ -742,7 +676,7 @@ class Bullet(object):
           vx0 = initial x-component of velocity at angle theta (m/s)
         """
         vx = self._vx_k3_(x,theta)
-        vx0 = self._vv_3d_(theta,0.)[bls.IX]
+        vx0 = self._vx_i_(theta)
         t = self.tof(x,theta)
         return h + (x*utils.tan(theta)) - (0.5*atm.G*np.power(t,2)) * \
                ((1 + (2*np.sqrt(vx/vx0)))/3)
@@ -764,69 +698,48 @@ class Bullet(object):
           vx = x-component of velocity at distance x (m/s)
         """
         vx = self._vx_k3_(x,theta)
-        vx0 = self._vv_3d_(theta,0.)[bls.IX]
+        vx0 = self._vx_i_(theta)
         t = self.tof(x,theta)
         tanp = utils.tan(theta) - ((atm.G*t)/vx0) * \
                ((1/3) * (1 + np.sqrt(vx0/vx) + vx0/vx))
         return utils.r2d(utils.arctan(tanp,'r'))
 
-    def trajectory(self,dt=0.01,**kwargs):
+    def trajectory(self,dt=0.01,maxd=np.inf,h=S_H,tr=None,theta=0.,th=W_HM,vw=None):
         """
          calculates trajectory of bullet at intervals of dt seconds when fired
          from h and stopping when bullet elevelation is below th
         :param dt: time interval for calculations (s)
-        :param kwargs: keyword argments
-         height: height of firearm at time of fire (m) default is average
-          height of a shoulder fired firearm
-         elev_angle: elevation angle y-axis (degrees) default is perpendicular
-          to tangential earth = 0
-         windage_angle: windage angle (degrees) default is 0 ('left' < 0)
-         brl_twist: barrel twist rate of firearm (mm) (default is 1:254 = 1:10")
-         brl_len: barrel length (NOT IMPLEMENTED)
-         poi: point of impact, a 3d position vector [x,y,z] of desired poi (m)
-          default is [inf,-inf,0] target height (m) default is 0 such that
-          calculation stops if bullet's x-position > poi.x or bullet's y-position
-          < poi.y
-         wind: wind vector (NOTE IMPLEMENTED)
-         maxd: stop at pos > maximum distance (m) default is infinity
+        :param maxd: stopping distance (if specified)
+        :param h: height of firearm at t=0 (m) (above survace_
+        :param tr: twist rate (mm)
+        :param theta: angle of fire
+        :param th: target height (m)
+        :param vw: wind vector (v_x,v_y,v_z)
+        NOTE:
+         will accept negative target heights in the event downslope firing is
+         ever added
+         NOTE:
+          not doing any error checks on most parameters in event firing uphill,
+          downhill are added etc
+         dt and maxd are functional
+         h, rt and theta describe the firearm state
+         th describes target state (could also be functional for now)
+         vw is atmospheric
         """
-        # setup default parameters if not specified
-        # parameters associated with firearm at time of fire
-        h = kwargs['height'] if 'height' in kwargs else S_H
-        theta = kwargs['elev_angle'] if 'elev_angle' in kwargs else 0.
-        phi = kwargs['windage_angle'] if 'windage_angle' in kwargs else 0.
-        bt = kwargs['brl_twist'] if 'brl_twist' in kwargs else 254
-        bl = kwargs['brl_len'] if 'brl_len' in kwargs else None
-        # parameters associated with poi
-        poi = kwargs['poi'] if 'poi' in kwargs else np.array([np.inf,-np.inf,0.])
-        # parameters asscoiated with atmosheric conditions
-        vw = kwargs['wind'] if 'wind' in kwargs else np.zeros(3,np.double)
+        # check for non-sensical
+        #if theta < 0 or theta > 90:
+        #    raise BulletException(
+        #        "{}: invalid 'theta' ({})".format(self._name,theta))
 
-        # don't allow firing 'behind' the firer to the left, right, top, bottom
-        if 90 < theta < 270:
-            raise BulletException(
-                "{}: elevation angle is non-sensical".format(self._name,theta)
-            )
-        if 90 < phi < 270:
-            raise BulletException(
-                "{}: windage angle is non-sensical".format(self._name,phi)
-            )
+        # initialize the bullet, wind vector
+        self.setup(h,theta,tr)
+        vw = np.zeros(3,np.double) if vw is None else vw
 
-        # initialize the bullet, then loop until it meets a specified stop cond.
-        # and/or IAW McCoy while the remaining velocity is at least 1/2 of the
-        # muzzle velocity i.e v_x >= v_x0/2
-        # TODO: have to figure out stopping at poi y-position in cases where
-        #  the shooter is firing below the target
-        self.chamber(
-            height=h,elev_angle=theta,windage_angle=phi,brl_twist=bt,brl_len=bl
-        )
-        while self._vpi[bls.IX] <= poi[bls.IX] and self._vi >= self._v0/2:
+        # loop until bullet falls below target height or passes max distance
+        # log it prior to iteration
+        while self._vp[bls.IY] > th and self._vp[bls.IX] <= maxd:
             self._ts.append(
-                (
-                    self._t,np.linalg.norm(self._vvi),
-                    tuple(self._vpi),
-                    tuple(self._vvi)
-                )
+                (self._t,np.linalg.norm(self._vv),tuple(self._vp),tuple(self._vv))
             )
             self._trajectory_(dt,vw)
 
@@ -848,7 +761,7 @@ class Bullet(object):
                 "{}: directory {} does not exist".format(self._name,dpath)
             )
 
-        fpath = os.path.join(dpath,"{}m range tabel {}.tsv".format(inc,self._name))
+        fpath = os.path.join(dpath,"{}m range-tbl {}.tsv".format(inc,self._name))
 
         # run trajectory and get interpolations
         self.trajectory(h=h,theta=fa,vw=vw)
@@ -916,11 +829,11 @@ class Bullet(object):
                 *[(x,y,z) for x,y,z in [vel for _,_,_,vel in self._ts]]
             )
             ts, vs = zip(*[(x, y) for x, y, _, _ in self._ts])
-            r2t = interp1d(xs,ts,kind='linear')
-            r2v = interp1d(xs,vs,kind='linear')
-            r2pos = interp1d(xs,(ys,zs),kind='linear')
-            r2vel = interp1d(xs,(vxs,vys,vzs),kind='linear')
-            return r2t,r2v,r2pos,r2vel
+            r2t = interp1d(xs, ts, kind='linear')
+            r2v = interp1d(xs, vs, kind='linear')
+            r2pos = interp1d(xs, (ys, zs), kind='linear')
+            r2vel = interp1d(xs, (vxs, vys, vzs), kind='linear')
+            return r2t, r2v, r2pos, r2vel
         except ValueError:
             raise BulletException("Run trajectory first")
 
@@ -932,16 +845,8 @@ class Bullet(object):
         :param t: the time step
         :param vw: wind vector
         :return: the new vector of velocity
-        Uses
-         Lahti 2019, eq 2, pg 39
-         p = p0 * cbrt(v/v0)
-          where
-           p0 = initial spin rate (radians/s),
-           v = current velocity (m/s), and
-           v0 = initial velocity (m/s)
-        TODO:
-         update & annotate calculation of vpi
         """
+        # TODO: can remove the return and accept of vv
         # 1. update directional components of velocity,
         # 2. calculate acceleration components,
         # 3. calculate then new directional components of velocity,
@@ -951,56 +856,85 @@ class Bullet(object):
         # 7. calculate new velocity
         # 8. calculate new spin rate
         va = self._va_(vw)
-        vv_i = self._vvi + va*t
-        self._vpi += ((self._vvi+vv_i)/2)*t + 0.5*va*np.power(t,2)
+        vv_i = self._vv + va*t
+        self._vp += ((self._vv+vv_i)/2)*t + 0.5*va*np.power(t,2)
         self._t += t
-        self._vi = np.linalg.norm(vv_i)
-        self._pi = self._p0*np.cbrt(self._vi/self._v0)
-        self._vvi = vv_i
+        self._update_vi_(np.linalg.norm(vv_i))
+        self._vv = vv_i
 
-    def _vv_3d_(self,theta=0.,phi=0.):
+    def _set_initial_(self,tr,theta):
+        """
+        initializes internal velocity and spin rate variables to time t=0
+        :param tr: firearm twist rate (mm)
+        :param theta: firing angle degrees
+        NOTE: initialization of v_i is reduandant as the speed of the bullet
+         at time 0 will always = the muzzle velocity
+         For initial spin rate, uses Lahti 2019, eq 1
+          p0 = 2*pi*v0/R
+           where
+            v0 = initial velocity (m/s), and
+            R = twist rate
+        """
+        # TODO: should we convert the twist rate to meters? or leave as mm?
+        self._vv0 = self._vcomp_i_(theta)
+        self._vv = self._vv0.copy()
+        self._p0 = (2*np.pi*self._v0)/(tr*bls.MM2M)
+        self._update_vi_(np.linalg.norm(self._vv))
+
+    def _update_vi_(self,v):
+        """
+        sets current velocity (magnitude) to v, updates _pi the spin
+        :param v: velocity/speed to set _vi to
+        Uses Lahti 2019, eq 2, pg 39
+         p = p0 * cbrt(v/v0)
+          where
+           p0 = initial spin rate (radians/s),
+           v = current velocity (m/s), and
+           v0 = initial velocity (m/s)
+        """
+        self._vi = v
+        self._pi = self._p0 * np.cbrt(self._vi/self._v0)
+
+    def _vcomp_i_(self,theta=0.,phi=0.):
         """
         calculates the 3d components of current velocity w/ angle of fire theta
-        and windage angle phi from McCoy 1999, eq 9.21 pg 191
+        and windage angle phi
         :param theta: angle of fire (degrees)
         :param phi: angle of fire along the z-axis (windage)
         :return: the components of velocity as a array [vx,vy,vz]
         """
         return np.array(
-            self._vi * [
-                utils.cos(theta)*utils.cos(phi),
-                utils.sin(theta)*utils.cos(phi),
-                utils.sin(phi)],
+            [self._vx_i_(theta,phi),self._vy_i_(theta,phi),self._vz_i_(phi)],
             np.double
         )
 
-    def vb_3d_(self,theta=0,phi=0.,alpha=0.,beta=0.):
+    def _vx_i_(self,theta,phi=0.):
         """
-         calculates the three unit vectors x, y and z of the bullet's axes
-        :param theta: elevation angle (degrees)
-        :param phi: windage angle (degrees)
-        :param alpha: pitch angle
-        :param beta: yaw angle
-        :return: x, y and z
-        uses McCoy 1999, eq 9.23 (x), 9.24 (y), 9.25 (z) and 9.26 (Q)
+        calculates the x component of current velocity at angle of fire theta
+        and windage angle phi
+        :param theta: angle of fire (degrees)
+        :param phi: angle of fire along the z-axis (windage)
+        :return: the x component of current velocity
         """
-        # calculate Q first then each of x, y and z
-        Q = np.power(utils.sin(phi+beta),2) + \
-            (np.power(utils.cos(phi+beta),2) * np.power(utils.cos(theta+alpha),2))
-        Q = (1/np.sqrt(Q))
+        return self._vi*utils.cos(theta)*utils.cos(phi)
 
-        bx = np.array(
-            [
-                utils.cos(theta+alpha)*utils.cos(phi+beta),
-                utils.sin(theta+alpha)*utils.cos(phi+beta),
-                utils.sin(phi+beta)
-            ],np.double
-        )
+    def _vy_i_(self,theta,phi=0.):
+        """
+        calculates the y component of current velocity at angle of fire theta
+        and windage angle phi
+        :param theta: angle of fire (degrees)
+        :param phi: angle of fire along the z-axis (windage)
+        :return: the y component of current velocity
+        """
+        return self._vi*utils.sin(theta)*utils.cos(phi)
 
-        by = Q * np.zeros(3)
-
-        bz = Q * np.zeros(3)
-        return bx,by,bz
+    def _vz_i_(self,phi=0):
+        """
+        calculates the z component of current velocity at windage angle phi
+        :param phi: angle of fire along the z-axis (windage)
+        :return: the z component of current velocity
+        """
+        return self._vi*utils.sin(phi)
 
     def _za_k_(self,fs,x):
         """
@@ -1077,13 +1011,12 @@ class Bullet(object):
         K3 = self.Cd() * np.sqrt(self.mach())
         return ((atm.RHO*self.A) / (2*self._m)) * K3*np.sqrt(atm.SOUND)
 
-    def _vx_k3_(self,x,theta,phi=0.):
+    def _vx_k3_(self,x,theta):
         """
         calculates x-component of velocity at range x fired from theta when
         using k3 drag coefficient
         :param x: range to estimate (m)
         :param theta: angel of fire
-        :param phi: windage angle
         :return:
         vx = (sqrt(v_x0) - 0.5*k3*x)^2 McCoy 1999 eq 5.67 pg. 94
           where
@@ -1091,9 +1024,7 @@ class Bullet(object):
            k3 = drag coefficient (see _k3_), and
            x = range to estimate (m)
         """
-        return np.power(
-            np.sqrt(self._vv_3d_(theta,phi)[0]) - (0.5*self._k3_()*x),2
-        )
+        return np.power(np.sqrt(self._vx_i_(theta)) - (0.5*self._k3_()*x),2)
 
     def _va_(self,vw):
         """
@@ -1132,7 +1063,7 @@ class Bullet(object):
           Meaning the vecotrs must be subtracted
           Because mFd in force.py is negative
         """
-        return -force.Fd(self) * self._vi*(self._vvi-vw) + force.gravity()
+        return force.mFd(self) * self._vi*(self._vv-vw) + force.gravity()
 
     def _hooke_cd_(self):
         """
@@ -1350,6 +1281,8 @@ class Bullet(object):
         #    m = mass of cylinder (kg),
         #    r = radius of cylinder (m), and
         #    h = height of cylinder (m)
+        # rc *= bls.MM2M
+        # lc *= bls.MM2M
         Ixc = 0.5 * mc * np.power(rc,2)
         Iyc = mc/12 * (3*np.power(rc,2) + np.power(lc,2))
 
