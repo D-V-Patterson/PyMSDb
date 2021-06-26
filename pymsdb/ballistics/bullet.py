@@ -664,7 +664,7 @@ class Bullet(object):
         self._vvi = self._vv0.copy()
         self._p0 = (2*np.pi*self._v0)/(self._d*(bt*bls.MM2M))
         self._pi = self._p0
-        #self._vbx,self._vby,self._vbz = self._vb_3d_(phi,theta,alpha,beta)
+        self._vbx,self._vby,self._vbz = self._vb_3d_(phi,theta,alpha,beta)
 
     def zero_angle(self,fs,x):
         """
@@ -960,6 +960,51 @@ class Bullet(object):
             np.double
         )
 
+    def _vb_3d_(self,phi=0,theta=0.,alpha=0.,beta=0.):
+        """
+         calculates the three unit vectors x, y and z of the bullet's axes
+        :param phi: elevation angle (degrees)
+        :param theta: windage angle (degrees)
+        :param alpha: pitch angle
+        :param beta: yaw angle
+        :return: x, y and z
+        uses McCoy 1999, eq 9.23 (x), 9.24 (y), 9.25 (z) and 9.26 (Q)
+         The x,y,z unit vectors form a triad with z perpendicular to x and lying
+         in the horizontal plane. y is thend defined as the cross product
+          y = z X x
+        """
+        # TODO: for z unit vector eq 9.25, is the 2nd component 0? looks like
+        #  an 'O'
+        # get the reciprical of the square root of Q
+        Q = 1/np.sqrt(self._Q_(phi,theta,alpha,beta))
+
+        # calculate bullet's x unit vector
+        bx = np.array(
+            [
+                cos(phi+alpha)*cos(theta+beta),
+                sin(phi+alpha)*cos(theta+beta),
+                sin(theta+beta)
+            ],np.double
+        )
+
+        # and y unit vector
+        by = Q * np.array(
+            [
+                -np.power(cos(theta),2)*sin(phi,alpha)*cos(phi+alpha),
+                np.power(cos(theta+beta),2)*np.power(cos(phi+alpha),2) +
+                    np.power(sin(theta+beta),2),
+                -sin(theta+beta)*cos(theta+beta)*sin(phi+alpha)
+            ],np.double
+        )
+
+        # finally the z unit vector
+        bz = Q * np.array(
+            [-sin(theta+beta),0,cos(theta+beta)*cos(phi+alpha)],np.double
+        )
+
+        # return
+        return bx,by,bz
+
     def _vx_i_(self,phi,theta=0.):
         """
         calculates the x component of current velocity at angle of fire phi
@@ -1110,10 +1155,30 @@ class Bullet(object):
            Let vw = (-200,0,0) meaning impossible winds
             i. subtract vv & vw: vv = (647.506,4.825,0) & vi = 647.524
             ii add vv & vw: vv = (683.095,4.825,0) & vi = 683.112
-          Meaning the vecotrs must be subtracted
+          Meaning the vectors must be subtracted
           Because mFd in force.py is negative
         """
         return -force.Fd(self) * (self._vvi-vw) + force.gravity()
+
+    def _Q_(self,phi,theta,alpha,beta):
+        """
+         implements McCoy 1999, eq 9.26 pg 192 for Q
+        :param phi: elevation angle
+        :param theta: windage angle
+        :param alpha: pitch angle
+        :param beta: yaw angle
+        :return: Q
+         Q = sin^2(phi + beta) + cos^2(phi+beta)*cos^2(theta,alpha)
+         where
+          phi = elevation angle (degrees),
+          theta = windage angle (degrees),
+          alpha = pitch angle (degrees), and
+          beta = yaw angle (degrees)
+        """
+        return  np.power(sin(theta+beta),2) + (
+                np.power(cos(theta+beta),2) *
+                np.power(cos(phi+alpha),2)
+        )
 
     def _hooke_cd_(self):
         """
@@ -1140,7 +1205,8 @@ class Bullet(object):
 
     def _mass_props_(self):
         """
-         estimates mass properties of the bullet based on bullet's length &
+         Given the OABL & drag model, estimates ogival, body & frustum lengths,
+         the frustum base diameter and the ogival radius
          std model ratios. Estimates:
           1. the diameter of the frustum if present,
           2. the volume of the bullet,
@@ -1148,9 +1214,7 @@ class Bullet(object):
           4. the moments of inertia (axial & transverse)
          NOTE: Requires that bullet has a known diameter, length and drag model
         """
-        # Given the OABL and drag model, estimate ogival, body & frustum lengths,
-        # the frustum base diameter and the ogival radius - throw exception of
-        # any model that is not a tanget ogive as these are not calculate yet
+        # throw exception for non-tangent ogive models until calculated
         mspec = model.mdl_specs[self._mdl]
         if mspec['ogv-shp'] != model.OGV_TAN:
             raise BulletException(
@@ -1370,6 +1434,6 @@ class Bullet(object):
         Iyo = (np.pi/4) * (_1 + _2 - _3)
         Iyo *= p*np.power(rc,5)
 
-        # summing the moments
+        # sum the moments
         self._Ix = Ixf + Ixc + Ixo
         self._Iy = Iyf + Iyc + Iyo
