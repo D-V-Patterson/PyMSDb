@@ -21,14 +21,23 @@ __status__ = 'Development'
 
 import numpy as np
 import pymsdb.utils as utils
+import pymsdb.ballistics as bls
 import pymsdb.ballistics.atmosphere as atm
 
 """
  TODO:
-  1. in Fd and mFd add option to compute rho via atmospheric functions (in atm)
+  1. in Fd add option to compute rho via atmospheric functions (in atm)
    based off of blt's current elevation although I don't think this will play
    much roll
     i. this implies the need to know the shooter's starting elevation as well 
+  2. Forces/Moments:
+   b. overturning moment (requires pitching/overturning moment coefficient)
+  3. See McCoy eq 9.18, do we need this?
+"""
+
+"""
+ Forces have the form F<force> where <force> is lowercase letter(s)
+ Moments have the form M>moment> where <moment> is lowercase letter(s)
 """
 
 #### GRAVITY
@@ -40,25 +49,6 @@ def gravity():
 #### DRAG
 
 def Fd(blt,rho=atm.RHO):
-	"""
-	 calculates the force of drag (Fd) given projectiles drag coefficient,
-	 cross-sectional area, velocity and air density
-	:param blt: Bullet object
-	:param rho: air density (kg/m3)
-	:return: numpy array of the 3d components of the Fd = Force of Drag
-	uses Fd = (-0.5 * Cd * V_x * vv * rho * A) / mass
-	 McCoy 1999, Eq 5.3, 5.7
-	 where
-	  Cd = coefficient of drag,
-	  V_x = speed at time i of x-component of velocity
-	  vv = xyz components of velocity at time i
-	  rho = air density
-	  A = cross-sectional area
-	  Fd in (N or kg⋅m/s^2)
-	"""
-	return mFd(blt,rho)*blt.velocity*blt.v_i
-
-def mFd(blt,rho=atm.RHO):
 	"""
 	 calculates the force of drag (Fd) magnitude given projectiles drag coefficient,
 	 cross-sectional area, velocity and air density
@@ -73,7 +63,93 @@ def mFd(blt,rho=atm.RHO):
 	  A = cross-sectional area
 	  Fd in (m I think)
 	"""
-	return -(0.5*blt.Cd()*rho*blt.A)/blt.mass
+	return (rho*blt.v_i*blt.A*blt.Cd()) / (2*blt.mass)
+
+#### LIFT
+
+def Fl(blt,rho=atm.RHO):
+	"""
+	 calculates the force of lift (Fl) magnitude given the air density and the
+	 bullet's lift coefficient, cross-sectional area, velocity, mass
+	:param blt: Bullet object
+	:param rho: air density (kg/m^3)
+	:return: force of lift
+	Uses McCoy 1999, eq 9.10 - 9.16 pg 190
+	 Fl = rho * v * S * Cl / 2 * m
+	  where
+	   rho = air density (kg/m^3),
+	   v = velocity magnitude (m/s),
+	   S = cross-sectional area (m^2),
+	   Cl = coefficient of lift,
+	   m = mass (kg)
+	"""
+	return (rho*blt.v_i*blt.A*blt.Cl()) / (2*blt.mass)
+
+#### MAGNUS MOMENT
+
+def Mm(blt,rho=atm.RHO):
+	"""
+	 calculates the Magnus moment magnitude given the air density and the bullet's
+	 magnus moment coefficient, velocity, cross-sectional area, diameter and
+	 transverse moment of inertia
+	:param blt: Bullet object
+	:param rho: air density
+	:return: the magnus force
+	Uses McCoy 1999, eq 9.10 - 9.16 pg 190
+	 Mm = rho * S * d^2 * Cmm * p  / 2 * Iy
+	  where
+	   rho = air density (kg/m^3),
+	   S = cross-sectional area (m^2),
+	   d = diameter (m),
+	   Cmm = magnus moment coefficient,
+	   p = spin rate (radians/s), and
+	   Iy = transverse moment of inertia
+	"""
+	_1 = rho*blt.A*np.power(blt.d*bls.MM2M,2)*blt.Cmm()*blt.p_i
+	return _1 / (2*blt.Iy())
+
+#### PITCH DAMPING MOMENT
+
+def Mpd(blt,rho=atm.RHO):
+	"""
+	 calculates the pitch damping moment given the air density and the bullet's
+	 pitch damping coefficients, velocity, cross-sectional area, diameter and
+	 mass
+	:param blt: Bullet object
+	:param rho: air density
+	:return: pitch damping force
+	 Uses McCoy 1999, eq 9.10 - 9.16 pg 190
+	  Mpd = rho * v * S * d^2 * (Cmq + Cma) / 2 * Iy
+	  where
+	   rho = air density (kg/m^3),
+	   v = velocity (m/s),
+	   S = cross-sectional area (m^2),
+	   d = diameter (m),
+	   Cmq, Cma = pitch damping coefficients, and
+	   Iy = transverse moment of inertia (radians/s)
+	"""
+	_1 = rho*blt.v_i*blt.A*np.power(blt.d*bls.MM2M,2)*sum(blt.Cmp())
+	return _1 / (2*blt.Iy())
+
+def Mo(blt,rho=atm.RHO):
+	"""
+	 calculates the overturning (aka pitching) moment given the air density and
+	 the bullet's pitching moment coefficient, velocity, cross-sectional area,
+	 diameter and transverse moment of inertia
+	:param blt: Bullet object
+	:param rho: air density
+	:return: pitch damping force
+	 Uses McCoy 1999, eq 9.10 - 9.16 pg 190
+	  Mpd = rho * v * S * d * Cma / 2 * Iy
+	  where
+	   rho = air density (kg/m^3),
+	   v = velocity (m/s),
+	   S = cross-sectional area (m^2),
+	   d = diameter (m),
+	   Cma = pitching moment coefficient, and
+	   Iy = transverse moment of inertia (radians/s)
+	"""
+	return (rho*blt.v_i*blt.A*(blt.d*bls.MM2M)*blt.Cmp()[0]) / (2*blt.Iy())
 
 #### CORIOLIS
 
