@@ -227,14 +227,23 @@ mtv_c2l = {
     'T':'Extremist Affiliation','U':'Unknown','V':'Violence','W':'Work','Y':'Psychosis',
 }
 
-# allowed target (People/Location) codes
-# G = Group/General
-# S = Specific
-# R = Random
-# U = Unknown
-tgt_codes = ['G','S','R','U']
+# allowed target codes (two-character code <people><location>)
+# People:
+#  G = Group: a group for example coworkers, classmates etc associated with
+#    shooter or a demographic associated with shooter's ideology such as race
+#  S = Specific: specific targets (by-name list)
+#  R = Random: generally in relation to violent ideology, shooters intent is to
+#   kill without regard to who to dies
+#  U = Unknown: cannot determine
+# Location:
+#  C = Chosen: location has no association/ties w/ shooter, selected for
+#   potential. Generally in relation to violent ideology
+#  S = Specific: location is associated with shooter such as a school or bus.
+#   or a demographic i.e. Mosque
+#  R = Random: generally in relation to an opportunistic or reactionary event
+#  U = Unknown: cannot determine
 tgt_c2l_tgt = {'G':'Group','S':'Specific','R':'Random','U':'Unknown'}
-tgt_c2l_loc = {'G':'General','S':'Specific','R':'Random','U':'Unknown'}
+tgt_c2l_loc = {'C':'Chosen','S':'Specific','R':'Random','U':'Unknown'}
 
 # shooter demographics is a string with a default/empty form of
 # age/gender/race/religion/education/military/criminal rec/mental health/subst. use
@@ -2465,11 +2474,22 @@ class MSDB(object):
             rec['motive'] = mcs
 
         # ensure target codes are valid
-        for c in rec['tgt']:
-            if c not in tgt_codes:
+        try:
+            p,l = rec['tgt']
+            if p not in tgt_c2l_tgt:
                 raise MSDBException(
-                    "Invalid 'target code' ({}) in record {}".format(key,c)
+                    "Invalid 'target code' ({}) in record {}. "
+                    "'People' ({}) not recognized.".format(rec['tgt'],key,p)
                 )
+            if l not in tgt_c2l_loc:
+                raise MSDBException(
+                    "Invalid 'target code' ({}) in record {}. "
+                    "'Location' ({}) not recognized.".format(rec['tgt'],key,l)
+                )
+        except ValueError: # target is not two-character
+            raise MSDBException(
+                "Invalid 'target code' ({}) in record {}".format(rec['tgt'],key)
+            )
 
         # all/ttl firearms will be an integer (greater than 0)
         try:
