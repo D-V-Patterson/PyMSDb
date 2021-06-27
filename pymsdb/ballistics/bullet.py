@@ -12,7 +12,7 @@ Defines caliber dataset reading/writing and the Caliber class
 
 #__name__ = 'bullet'
 __license__ = 'GPLv3'
-__version__ = '0.1.7.1'
+__version__ = '0.1.7.2'
 __date__ = 'June 2021'
 __author__ = 'Dale Patterson'
 __maintainer__ = 'Dale Patterson'
@@ -26,7 +26,6 @@ import pymsdb.ballistics as bls
 import pymsdb.ballistics.force as force
 import pymsdb.ballistics.model as model
 import pymsdb.ballistics.atmosphere as atm
-#import pymsdb.utils as utils
 from pymsdb import PyMSDbException
 from pymsdb.ballistics.anthropometry import S_H
 from pymsdb.utils import r2d,sin,cos,tan,arctan,arcsin
@@ -36,23 +35,8 @@ class BulletException(PyMSDbException):
 
 """
 TODO: 
-  3. take a look at Boatright
-  5. in addition to tof, elevation, add velocity at range x
-   velocity at range x (using k3) is off by 100 m/s (low) for 7.62 but other 
-   estimates tof, elevation, zero angle and fall angle compare favorably to 
-   trajectory results
-  6. See above, also add range when given angle of fire
-  7. trajectory could become unwieldy with multiple parameters: could use
-   dicts such as
-   firearm = {height,front-sight height,barrel len,barrel,twist,angle of fire}
-   target = {height to hit target, range from firearm to target etc}
-   functional = {time increment, ???}
-   atmospheric conditions = {wind vector,elevation,temperature etc} 
-   these could also be classes or compiled into lists with standarized indexes
   8. Cd is currently using method that does not specify ballistic models
   9. Want range based functions vice time (requires integration?) 
- 11. continue allowing return of nan in Lahti defined coefficients? or return None
-  or throw error?
  15. add option to set/configure windage angle
  18. For ke, momentum do we want to round or not?
  19. round off errors
@@ -60,7 +44,7 @@ TODO:
  21. Have seen sectional density (SD) defined as the (1) ratio of mass to cross-
   sectional area and (2) ratio of mass to the square of the diameter. Currently
   using 2, should this be kept as is or changed. 
- 22. Figure out what to do with wind vector (see McCoy 1999, eq 9.22 pg 191
+ 22. Figure out what to do with wind vector (see McCoy 1999, eq 9.22 pg 191)
  23. After adding windage angle, should we go back to estimating functions like
   tof and add it or keep as 2d estimating functions
  24. Look at IJCSM1405Gritzapisetal1..pd.pdf sec 9 for aerodynamic jump deflection
@@ -87,7 +71,7 @@ class Bullet(object):
       xcg = axial center of gravity, the distance from the base of the bullet
        to the center of gravity on the x-axis (centerline) (mm)
       SD = sectional density (see https://www.chuckhawks.com/sd.htm) (kg/m^2)
-       to convert to imperial use balllistics.msd2isd
+       to convert to imperial use ballistics.msd2isd
       A = cross-sectional area ((https://www.chuckhawks.com/frontal_area.htm)
        (m^2) to convert to imperial use ballistics.ma2ia
      - Bullet velocity dependent properties
@@ -149,59 +133,67 @@ class Bullet(object):
          _A = <double> cross-sectional area (m^2)
          _SD = <double> sectional density (kg/m^2)
          _m = <double> mass (kg) by converting w in gr to kg
-         _t = <double> 'current' time (s)
-         _t = <double> 'current' time (s)
-         _vi = <double> 'current' velocity at time _t (m/s)
-         _vv0, _vvi = <3D vector> velocity components (m/s) on the x,y,z axis
-          at initial and time t = i
-         _vp0,_vpi = <3D vector> 'current' position (m) on the x,y,z axis at
-          initial and time t = i
-         _vbx, _vby, _vbz = (3D vector>s unit vectors along the bullets axes
-          which are used to calculate the angular momentum and orginate at
-          (xcg,0,0) (see McCoy 1999, Fig 9.1, sections 9.2 and 9.3)
-         _p0 = <double> initial spin rate (radians/s) defined in Lahti 2019 eq 1
-         _pi = <double> current spin rate (radians/s) defined in Lahti 2019 eq 2
          _vol = <double> estimated volume of the bullet (mm^3)
          _db = <double> base diameter (for bullets with frustums else db = d)
-         _xcg = <double> bullet's x-axis center of gravity (dist. from base) (mm)
          _Ix = <double> bullet's axial moment of inertia (kg-m^2)
          _Iy = <double> bullet's transverse moment of inertia (kg-m^2)
+         _t = <double> 'current' time (s)
+         _v_t = <double> 'current' velocity magnitude at time _t (m/s)
+         _vV_0, _vV_t = <3D vector> velocity components (m/s) on the x,y,z axis
+           at initial and time t = self._t
+         _vP_0,_vP_t = <3D vector> 'current' position (m) on the x,y,z axis at
+           initial and time t = self._t
+         _vI, _vJ, _vK = (3D vector>s unit vectors along the bullets axes
+          which are used to calculate the angular momentum and orginate at
+          (xcg,0,0) (see McCoy 1999, Fig 9.1, sections 9.2 and 9.3)
+         _p_0, _p_t = <double> initial and current spin rate (radians/s)
+         _xcg = <double> bullet's x-axis center of gravity (dist. from base) (mm)
          _ts = <list of tuples> steps for iteration where each
            tuple t = (Time,current velocity,position vector,velocity vector)
+
+         NOTE: naming conventions
+          - time dependent variables are defined with suffix _<time> where time
+            is 0=initial or t=current i.e. v_t = current velocity at time
+            t = self._t
+          - vectors are defined as v<VAR> where the previx 'v' denotes a vector
+            and <VAR> is  one or more characters and the first character is
+            capitalized i.e. vP_0 is the initial position vector
         """
-        # get passed in variables (assume correct)
+        # get passed in variables (assume correct) and set variables that can 
+        # be defined at initialiation
         self._name = "{} ({}gr)".format(name,w)
         self._cd = cd
         self._sz = sz
         self._d = np.double(d)
         self._oal = np.double(clen)
         self._oabl = np.double(blen) if blen else None
-        self._v0 = np.double(v)
+        self._v_0 = np.double(v) # initial velocity magnitude
         self._w = w
         self._cg = cg
-
-        # create mass properties that can derived at initiation, that are model
-        # dependent and variables for trajectory calculations
         self._m = np.double(self._w*bls.GR2KG)
         self._A = np.pi*np.power((self.d*bls.MM2M)/2,2)
         self._SD = self._m / np.power((self.d*bls.MM2M),2)
-        self._db = None
-        self._vol = None
-        self._xcg = None
-        self._Ix = None
-        self._Iy = None
-        self._t = 0.
-        self._p0 = None  # spin rate at time t = 0
-        self._pi = None  # spin rate at time t = i
-        self._vp0 = None # position vector at time t = 0
-        self._vpi = None # position vector at time t = 1
-        self._vv0 = None # velocity vector at time t = 0
-        self._vvi = None # velocity vector at time t = i
-        self._vi = None # velocity magnitude at time t = i
-        self._vbx = None # unit vector along bullet's x-axis
-        self._vby = None  # unit vector along bullet's y-axis
-        self._vbz = None  # unit vector along bullet's z-axis
-        self._ts = []
+
+        # create mass properties that can derived at initiation, properties that
+        # are model dependent and variables for trajectory calculations
+        self._db = None   # base diameter (frustum base)
+        self._vol = None  # volume
+        self._xcg = None  # x-axis center of gravity
+        self._Ix = None   # axial momement of inertia
+        self._Iy = None   # transverse moment of inertia
+        self._t = 0.      # current time 
+        self._p_0 = None  # initial spin rate
+        self._p_t = None  # spin rate at time t = self._t
+        self._vP_0 = None # intial position vector
+        self._vP_t = None # position vector at time t = self._t
+        self._vV_0 = None # initial velocity vector
+        self._vV_t = None # velocity vector at time t = self._t
+        self._v_t = None  # velocity magnitude at time t = self._t
+        self._vI = None   # unit vector along bullet's x-axis
+        self._vJ = None   # unit vector along bullet's y-axis
+        self._vK = None   # unit vector along bullet's z-axis
+        self._ss = []     # steps
+        
         # reset the bullet and set the model
         self.reset()
         self.mdl = mdl
@@ -210,34 +202,37 @@ class Bullet(object):
         """ resets bullet to initial state (immediately prior to fire)  """
         # set elpased time back and steps to empty
         self._t = np.double(0.)
-        self._ts = []
+        self._ss = []
 
         # position and velocity vectors are set to prior to fire, speeds are
         # reset & spin rate is not a number
-        self._vp0 = np.array([0.,0.,0.],np.double)
-        self._vv0 = np.array([0.,0.,0.],np.double)
-        self._vpi = np.array([0.,0.,0.],np.double)
-        self._vvi = np.array([0.,0.,0.],np.double)
-        self._vbx = None
-        self._vby = None
-        self._vbz = None
-        self._vi = self._v0
-        self._pi = self._p0 = np.nan
+        self._vP_0 = np.array([0.,0.,0.],np.double)
+        self._vV_0 = np.array([0.,0.,0.],np.double)
+        self._vP_t = np.array([0.,0.,0.],np.double)
+        self._vV_t = np.array([0.,0.,0.],np.double)
+        self._vI = None
+        self._vJ = None
+        self._vK = None
+        self._v_t = self._v_0
+        self._p_t = self._p_0 = np.nan
 
     @property
     def name(self): return self._name
 
     @property
-    def v_0(self): return self._v0 # initial/muzzle velocity
+    def charge(self): return self._cg
 
     @property
-    def v_i(self): return self._vi # current velocity
+    def v_0(self): return self._v_0 # initial/muzzle velocity
 
     @property
-    def p_0(self): return self._p0 # initial spin rate
+    def v_i(self): return self._v_t # current velocity
 
     @property
-    def p_i(self): return self._pi # current spin rate
+    def p_0(self): return self._p_0 # initial spin rate
+
+    @property
+    def p_t(self): return self._p_t # current spin rate
 
     @property
     def mdl(self): return self._mdl
@@ -258,52 +253,55 @@ class Bullet(object):
         self._mass_props_()
 
     @property
-    def position(self): return self._vpi
+    def position(self): return self._vP_t
 
     @property
-    def velocity(self): return self._vvi
+    def velocity(self): return self._vV_t
 
     @property
-    def x(self): return self._vpi[bls.IX] # 'current' horizontal position
+    def x_0(self): return self._vP_0[bls.IX] # initial horizontal position
 
     @property
-    def x_0(self): return self._vp0[bls.IX] # initial horizontal position
+    def x(self): return self._vP_t[bls.IX] # 'current' horizontal position
 
     @property
-    def y(self): return self._vpi[bls.IY] # 'current' vertical position
+    def y_0(self): return self._vP_0[bls.IY]  # initial vertical position
 
     @property
-    def y_0(self): return self._vp0[bls.IY]  # initial vertical position
+    def y(self): return self._vP_t[bls.IY] # 'current' vertical position
 
     @property
-    def z(self): return self._vpi[bls.IZ] # 'current' windage distance
+    def z_0(self): return self._vP_0[bls.IZ]  # initial windage position
 
     @property
-    def z_0(self): return self._vp0[bls.IZ]  # initial windage position
+    def z(self): return self._vP_t[bls.IZ] # 'current' windage distance
 
     @property
-    def v_x(self): return self._vvi[bls.IX] # 'current' x-component of velocity
+    def v_x0(self): return self._vV_0[bls.IX]  # initial x-component of velocity
 
     @property
-    def v_x0(self): return self._vv0[bls.IX]  # initial x-component of velocity
+    def v_x(self): return self._vV_t[bls.IX] # 'current' x-component of velocity
 
     @property
-    def v_y(self): return self._vvi[bls.IY] # 'current' y-component of velocity
+    def v_y0(self): return self._vV_0[bls.IY]  # initial y-component of velocity
 
     @property
-    def v_y0(self): return self._vv0[bls.IY]  # initial y-component of velocity
+    def v_y(self): return self._vV_t[bls.IY] # 'current' y-component of velocity
 
     @property
-    def v_z(self): return self._vvi[bls.IZ] # 'current' x-component of velocity
+    def v_z0(self): return self._vV_0[bls.IZ]  # initial x-component of velocity
 
     @property
-    def v_z0(self): return self._vv0[bls.IZ]  # initial x-component of velocity
+    def v_z(self): return self._vV_t[bls.IZ] # 'current' x-component of velocity
 
     @property
-    def grains(self): return self._w
+    def weight(self): return self._w
 
     @property
     def mass(self): return self._m
+
+    @property
+    def volume(self): return self._vol
 
     @property
     def SD(self): return self._SD
@@ -315,22 +313,16 @@ class Bullet(object):
     def d(self): return self._d
 
     @property
-    def oabl(self): return self._oabl
-
-    @property
-    def charge(self): return self._cg
-
-    @property
     def db(self): return self._db
 
     @property
     def oal(self): return self._oal
 
     @property
-    def xcg(self): return self._xcg # x-dimension of center of gravity
+    def oabl(self): return self._oabl
 
     @property
-    def volume(self): return self._vol
+    def xcg(self): return self._xcg # x-dimension of center of gravity
 
 #### OUTPUT
 
@@ -345,40 +337,40 @@ class Bullet(object):
         if j is None:
             print(
                 strf.format(
-                    self._ts[i][0],
-                    self._ts[i][1],
-                    self._ts[i][2][bls.IX],
-                    self._ts[i][2][bls.IY],
-                    self._ts[i][2][bls.IZ],
-                    self._ts[i][3][bls.IX],
-                    self._ts[i][3][bls.IY],
-                    self._ts[i][3][bls.IZ]
+                    self._ss[i][0],
+                    self._ss[i][1],
+                    self._ss[i][2][bls.IX],
+                    self._ss[i][2][bls.IY],
+                    self._ss[i][2][bls.IZ],
+                    self._ss[i][3][bls.IX],
+                    self._ss[i][3][bls.IY],
+                    self._ss[i][3][bls.IZ]
                 )
             )
             return
-        if j == -1: j = len(self._ts)
+        if j == -1: j = len(self._ss)
         for i in range(i,j):
             print(
                 strf.format(
-                    self._ts[i][0],
-                    self._ts[i][1],
-                    self._ts[i][2][bls.IX],
-                    self._ts[i][2][bls.IY],
-                    self._ts[i][2][bls.IZ],
-                    self._ts[i][3][bls.IX],
-                    self._ts[i][3][bls.IY],
-                    self._ts[i][3][bls.IZ],
+                    self._ss[i][0],
+                    self._ss[i][1],
+                    self._ss[i][2][bls.IX],
+                    self._ss[i][2][bls.IY],
+                    self._ss[i][2][bls.IZ],
+                    self._ss[i][3][bls.IX],
+                    self._ss[i][3][bls.IY],
+                    self._ss[i][3][bls.IZ],
                 )
             )
 
 #### CALCULABLE ATTRIBUTES
 # change w.r.t velocity etc
 
-    def ke(self): return np.round(self._m*np.power(self._vi,2)*0.5,3)
+    def ke(self): return self._m*np.power(self._v_t,2)*0.5
 
-    def momentum(self): return np.round(self._m*self._vi,3)
+    def momentum(self): return self._m*self._v_t
 
-    def mach(self): return atm.mach(self._vi)
+    def mach(self): return atm.mach(self._v_t)
 
     def BC(self):
         """
@@ -573,8 +565,8 @@ class Bullet(object):
           For 7.62x39 we get 7.66e-08
         """
         Cma = self.Cmp()[0]
-        return (np.power(self._Ix,2)*np.power(self._pi,2)) / (
-                2*rho*self._Iy*self._A*(self._d*bls.MM2M)*np.power(self._vi,2)*Cma
+        return (np.power(self._Ix,2)*np.power(self._p_t,2)) / (
+                2*rho*self._Iy*self._A*(self._d*bls.MM2M)*np.power(self._v_t,2)*Cma
         )
 
     def Sd(self):
@@ -652,19 +644,19 @@ class Bullet(object):
 
         # 1) reset the bullet to 'empty/starting' state.
         # 2) Set the initial and current position vectors to (0,h,0).
-        # 3) Set current velocity magnitude
-        # 4) set initial and current velocity vectors
-        # 5) Set initial and current spin rate
-        # 6) set x,y,z unit vectors need pitch angle and yaw angle
+        # 3) set initial and current velocity vectors and get current velocity
+        #  magnitude
+        # 4) Set initial and current spin rate
+        # 5) set x,y,z unit vectors need pitch angle and yaw angle
         self.reset()
-        self._vp0[bls.IY] = h
-        self._vpi = self._vp0.copy()
-        self._vi = self._v0
-        self._vv0 = self._vv_3d_(phi,theta)
-        self._vvi = self._vv0.copy()
-        self._p0 = (2*np.pi*self._v0)/(self._d*(bt*bls.MM2M))
-        self._pi = self._p0
-        self._vbx,self._vby,self._vbz = self._vb_3d_(phi,theta,alpha,beta)
+        self._vP_0[bls.IY] = h
+        self._vP_t = self._vP_0.copy()
+        self._vV_0 = self._vv_3d_(phi,theta)
+        self._vV_t = self._vV_0.copy()
+        self._v_t = np.linalg.norm(self._vV_t)
+        self._p_0 = (2*np.pi*self._v_0)/(self._d*(bt*bls.MM2M))
+        self._p_t = self._p_0
+        self._vI,self._vJ,self._vK = self._vb_3d_(phi,theta,alpha,beta)
 
     def zero_angle(self,fs,x):
         """
@@ -809,12 +801,12 @@ class Bullet(object):
         self.chamber(
             height=h,elev_angle=phi,windage_angle=theta,brl_twist=bt,brl_len=bl
         )
-        while self._vpi[bls.IX] <= poi[bls.IX] and self._vi >= self._v0/2:
-            self._ts.append(
+        while self._vP_t[bls.IX] <= poi[bls.IX] and self._v_t >= self._v_0/2:
+            self._ss.append(
                 (
-                    self._t,np.linalg.norm(self._vvi),
-                    tuple(self._vpi),
-                    tuple(self._vvi)
+                    self._t,np.linalg.norm(self._vV_t),
+                    tuple(self._vP_t),
+                    tuple(self._vV_t)
                 )
             )
             self._trajectory_(dt,vw)
@@ -841,7 +833,7 @@ class Bullet(object):
 
         # run trajectory and get interpolations
         self.trajectory(h=h,phi=fa,vw=vw)
-        if not self._ts:
+        if not self._ss:
             print("{}: No trajectory for height={}, phi-{}".format(
                 self._name,h,fa)
             )
@@ -849,7 +841,7 @@ class Bullet(object):
         r2t,r2v,r2pos,_ = self.interpolate()
 
         # set up max distance
-        maxd = int(self._ts[-1][2][0] // inc * inc)
+        maxd = int(self._ss[-1][2][0] // inc * inc)
 
         cnt = 0
         fout = None
@@ -899,12 +891,12 @@ class Bullet(object):
         """
         try:
             xs,ys,zs = zip(
-                *[(x,y,z) for x,y,z in [pos for _,_,pos,_ in self._ts]]
+                *[(x,y,z) for x,y,z in [pos for _,_,pos,_ in self._ss]]
             )
             vxs,vys,vzs = zip(
-                *[(x,y,z) for x,y,z in [vel for _,_,_,vel in self._ts]]
+                *[(x,y,z) for x,y,z in [vel for _,_,_,vel in self._ss]]
             )
-            ts, vs = zip(*[(x, y) for x, y, _, _ in self._ts])
+            ts, vs = zip(*[(x, y) for x, y, _, _ in self._ss])
             r2t = interp1d(xs, ts, kind='linear')
             r2v = interp1d(xs, vs, kind='linear')
             r2pos = interp1d(xs, (ys, zs), kind='linear')
@@ -940,12 +932,12 @@ class Bullet(object):
         # 7. calculate new velocity
         # 8. calculate new spin rate
         va = self._va_(vw)
-        vv_i = self._vvi + va * t
-        self._vpi += ((self._vvi + vv_i) / 2) * t + 0.5 * va * np.power(t, 2)
+        vv_i = self._vV_t + va * t
+        self._vP_t += ((self._vV_t + vv_i) / 2) * t + 0.5 * va * np.power(t, 2)
         self._t += t
-        self._vi = np.linalg.norm(vv_i)
-        self._pi = self._p0 * np.cbrt(self._vi / self._v0)
-        self._vvi = vv_i
+        self._v_t = np.linalg.norm(vv_i)
+        self._p_t = self._p_0 * np.cbrt(self._v_t / self._v_0)
+        self._vV_t = vv_i
 
     def _vv_3d_(self,phi=0.,theta=0.):
         """
@@ -1013,7 +1005,7 @@ class Bullet(object):
         :param theta: angle of fire along the z-axis (windage)
         :return: the x component of current velocity
         """
-        return self._vi*cos(phi)*cos(theta)
+        return self._v_t*cos(phi)*cos(theta)
 
     def _vy_i_(self,phi,theta=0.):
         """
@@ -1023,7 +1015,7 @@ class Bullet(object):
         :param theta: angle of fire along the z-axis (windage)
         :return: the y component of current velocity
         """
-        return self._vi*sin(phi)*cos(theta)
+        return self._v_t*sin(phi)*cos(theta)
 
     def _vz_i_(self,theta=0):
         """
@@ -1031,7 +1023,7 @@ class Bullet(object):
         :param theta: angle of fire along the z-axis (windage)
         :return: the z component of current velocity
         """
-        return self._vi*sin(theta)
+        return self._v_t*sin(theta)
 
     def _za_k_(self,fs,x):
         """
@@ -1076,9 +1068,9 @@ class Bullet(object):
            m = mass (kg)
         """
         k = (atm.RHO * self.A) / (2 * self._m) * self.Cd()
-        v_x = self._v0 * np.exp(-k*x)
-        t = ((x / self._v0) * (self._v0 / v_x - 1)) / np.log(self._v0/v_x)
-        dv = self._v0/v_x
+        v_x = self._v_0 * np.exp(-k*x)
+        t = ((x / self._v_0) * (self._v_0 / v_x - 1)) / np.log(self._v_0/v_x)
+        dv = self._v_0/v_x
         _1 = np.power(dv-1,-1)
         _2 = np.power(dv-1,-2) * np.log(dv)
         za = arctan((fs*bls.MM2M+(0.5*atm.G*np.power(t,2)) * (0.5+_1-_2))/x,'r')
@@ -1158,7 +1150,7 @@ class Bullet(object):
           Meaning the vectors must be subtracted
           Because mFd in force.py is negative
         """
-        return -force.Fd(self) * (self._vvi-vw) + force.gravity()
+        return -force.Fd(self) * (self._vV_t-vw) + force.gravity()
 
     def _Q_(self,phi,theta,alpha,beta):
         """
