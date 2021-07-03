@@ -13,8 +13,8 @@ returned from a MSDB object
 
 #__name__ = 'utils'
 __license__ = 'GPLv3'
-__version__ = '0.0.2'
-__date__ = 'April 2021'
+__version__ = '0.0.3'
+__date__ = 'July 2021'
 __author__ = 'Dale Patterson'
 __maintainer__ = 'Dale Patterson'
 __email__ = 'dale.v.patterson@gmail.com'
@@ -38,84 +38,39 @@ def r2m(r): return r*60.0*180.0/np.pi # radians to MOA
 def m2d(m): return m/60.0             # MOA to degrees
 def m2r(m): return m/60.0*np.pi/180.0 # MOA to radians
 
-# hack trigonometry fcts to return 0. rather than very small number for certain
-# degrees i.e. sin of 180 degrees
+# hack trigonometry fcts to return 0 via rounding. rather than very small number
+# for certain values i.e. sin of 180 degrees. All numpy trig fcts expect values
+# in radians, those defined here a convert-from parameter ('xtype') where 'xtype'
+# is one of {'r':radians i.e. do nothing,'d'=degrees.'m'=moa}
+def cos(x,xtype='d',rnd=3):
+    if xtype == 'd': x = d2r(x)
+    elif xtype == 'm': x = m2r(x)
+    return np.round(np.cos(x),rnd)
 
-# all trig fcts expect values in radians but have built-in convert-from parameter
-# where convert-from is one of {'r':radians i.e. do nothing,'d'=degrees.'m'=moa}
-# TODO:
-#  is there a better way of setting elements to 0
-def cos(x,m='d'):
-    if m == 'd': x = d2r(x)
-    elif m == 'm': x = m2r(x)
-    x = np.cos(x)
-    z = np.isclose(x,0.)
-    if isinstance(z,np.ndarray):
-        if np.any(z):
-            for i,zi in enumerate(z):
-                if zi: x[i] = 0.
-    elif z: x = 0.
-    return x
+def sin(x,xtype='d',rnd=3):
+    if xtype == 'd': x = d2r(x)
+    elif xtype == 'm': x = m2r(x)
+    return np.round(np.sin(x),rnd)
 
-def sin(x,m='d'):
-    if m == 'd': x = d2r(x)
-    elif m == 'm': x = m2r(x)
-    x = np.sin(x)
-    z = np.isclose(x,0.)
-    if isinstance(z,np.ndarray):
-        if np.any(z):
-            for i,zi in enumerate(z):
-                if zi: x[i] = 0.
-    elif z: x = 0.
-    return x
+def tan(x,xtype='d',rnd=3):
+    if xtype == 'd': x = d2r(x)
+    elif xtype == 'm': x = m2r(x)
+    return np.round(np.tan(x),rnd)
 
-def tan(x,m='d'):
-    if m == 'd': x = d2r(x)
-    elif m == 'm': x = m2r(x)
-    x = np.tan(x)
-    z = np.isclose(x, 0.)
-    if isinstance(z,np.ndarray):
-        if np.any(z):
-            for i,zi in enumerate(z):
-                if zi: x[i] = 0.
-    elif z: x = 0.
-    return x
+def arccos(x,xtype='d',rnd=3):
+    if xtype == 'd': x = d2r(x)
+    elif xtype == 'm': x = m2r(x)
+    return np.round(np.arccos(x),rnd)
 
-def arccos(x,m='d'):
-    if m == 'd': x = d2r(x)
-    elif m == 'm': x = m2r(x)
-    x = np.arccos(x)
-    z = np.isclose(x, 0.)
-    if isinstance(z,np.ndarray):
-        if np.any(z):
-            for i,zi in enumerate(z):
-                if zi: x[i] = 0.
-    elif z: x = 0.
-    return x
+def arcsin(x,xtype='d',rnd=3):
+    if xtype == 'd': x = d2r(x)
+    elif xtype == 'm': x = m2r(x)
+    return np.round(np.arcsin(x),rnd)
 
-def arcsin(x,m='d'):
-    if m == 'd': x = d2r(x)
-    elif m == 'm': x = m2r(x)
-    x = np.arcsin(x)
-    z = np.isclose(x, 0.)
-    if isinstance(z,np.ndarray):
-        if np.any(z):
-            for i,zi in enumerate(z):
-                if zi: x[i] = 0.
-    elif z: x = 0.
-    return x
-
-def arctan(x,m='d'):
-    if m == 'd': x = d2r(x)
-    elif m == 'm': x = m2r(x)
-    x = np.arctan(x)
-    z = np.isclose(x, 0.)
-    if isinstance(z,np.ndarray):
-        if np.any(z):
-            for i,zi in enumerate(z):
-                if zi: x[i] = 0.
-    elif z: x = 0.
-    return x
+def arctan(x,xtype='d',rnd=3):
+    if xtype == 'd': x = d2r(x)
+    elif xtype == 'm': x = m2r(x)
+    return np.round(np.arctansin(x),rnd)
 
 def percent_change(old,new): return (new-old) / old * 100
 
