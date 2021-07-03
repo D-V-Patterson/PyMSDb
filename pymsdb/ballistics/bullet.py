@@ -215,24 +215,6 @@ class Bullet(object):
         self._p_t = self._p_0 = np.nan
 
     @property
-    def name(self): return self._name
-
-    @property
-    def charge(self): return self._cg
-
-    @property
-    def v_0(self): return self._v_0 # initial/muzzle velocity
-
-    @property
-    def v_t(self): return self._v_t # current velocity
-
-    @property
-    def p_0(self): return self._p_0 # initial spin rate
-
-    @property
-    def p_t(self): return self._p_t # current spin rate
-
-    @property
     def mdl(self): return self._mdl
 
     @mdl.setter
@@ -249,6 +231,24 @@ class Bullet(object):
             )
         self._mdl = mdl
         self._mass_props_()
+
+    @property
+    def name(self): return self._name
+
+    @property
+    def charge(self): return self._cg
+
+    @property
+    def v_0(self): return self._v_0 # initial/muzzle velocity
+
+    @property
+    def v_t(self): return self._v_t # current velocity
+
+    @property
+    def p_0(self): return self._p_0 # initial spin rate
+
+    @property
+    def p_t(self): return self._p_t # current spin rate
 
     @property
     def vP_t(self): return self._vP_t
@@ -312,8 +312,8 @@ class Bullet(object):
         :param i: first step
         :param j: last step use -1 for last element and None to print only at i
         """
-        strf = "At time t={:.2f}. Vel.= {:.1f}. Pos: (x={:.2f},y={:.2f},z={:.2f})" \
-               " and Vel: (x={:.1f},y={:.1f},z={:.1f})."
+        strf = "At time t={:.2f}. Vel.= {:.3f}. Pos: (x={:.3f},y={:.3f},z={:.3f})" \
+               " and Vel: (x={:.3f},y={:.3f},z={:.3f})."
         if j is None:
             print(
                 strf.format(
@@ -656,7 +656,8 @@ class Bullet(object):
         #  - minimize the number of angles, thetas
         try:
             fs *= bls.MM2M
-            thetas = np.linspace(0,45.,num=1000)
+            #thetas = np.linspace(0,45.,num=1000)
+            thetas = np.linspace(0,1.)
             zs = interp1d(self.elevation(x,fs,thetas),thetas)
             return np.round(zs(fs),6)
         except ValueError: # assuming caused by za = float(zs(fs*bls.MM2M))
@@ -748,7 +749,7 @@ class Bullet(object):
           default is [inf,-inf,0] target height (m) default is 0 such that
           calculation stops if bullet's x-position > poi.x or bullet's y-position
           < poi.y
-         wind: wind vector (NOTE IMPLEMENTED)
+         wind: wind vector (NOT IMPLEMENTED)
          maxd: stop at pos > maximum distance (m) default is infinity
         """
         # setup default parameters if not specified
@@ -759,9 +760,11 @@ class Bullet(object):
         bt = kwargs['brl_twist'] if 'brl_twist' in kwargs else 254
         bl = kwargs['brl_len'] if 'brl_len' in kwargs else None
         # parameters associated with poi
-        poi = kwargs['poi'] if 'poi' in kwargs else np.array([np.inf,-np.inf,0.])
+        poi = np.array([np.inf,-np.inf,0.])
+        if 'poi' in kwargs and kwargs['poi'] is not None: poi = kwargs['poi']
         # parameters asscoiated with atmosheric conditions
-        vw = kwargs['wind'] if 'wind' in kwargs else np.zeros(3,np.double)
+        vw = np.zeros(3,np.double)
+        if 'wind' in kwargs and kwargs['wind'] is not None: vw = kwargs['wind']
 
         # don't allow firing 'behind' the firer to the left, right, top, bottom
         if 90 < phi < 270:
@@ -798,8 +801,8 @@ class Bullet(object):
         constructs a (.tsv) range card
         :param dpath: directory path to write
         :param inc: increment of table rows (m)
-        :param h: height of fire
-        :param fa: angle of fire
+        :param h: height of fire (m)
+        :param fa: angle of fire (degrees)
         :param vw: wind vector (not used now)
         """
         # TODO: I don't like this function here in the Bullet class
@@ -812,7 +815,7 @@ class Bullet(object):
         fpath = os.path.join(dpath,"{}m range-tbl {}.tsv".format(inc,self._name))
 
         # run trajectory and get interpolations
-        self.trajectory(h=h,phi=fa,vw=vw)
+        self.trajectory(height=h,elev_angle=fa,wind=vw)
         if not self._ss:
             print("{}: No trajectory for height={}, phi-{}".format(
                 self._name,h,fa)
@@ -911,13 +914,13 @@ class Bullet(object):
         # 6. update directional components of velocity
         # 7. calculate new velocity
         # 8. calculate new spin rate
-        va = self._va_(vw)
-        vv_i = self._vV_t + va * t
-        self._vP_t += ((self._vV_t + vv_i) / 2) * t + 0.5 * va * np.power(t, 2)
+        vA = self._va_(vw)
+        vV_t = self._vV_t + vA * t
+        self._vP_t += ((self._vV_t + vV_t) / 2) * t + 0.5 * vA * np.power(t,2)
         self._t += t
-        self._v_t = np.linalg.norm(vv_i)
+        self._v_t = np.linalg.norm(vV_t)
         self._p_t = self._p_0 * np.cbrt(self._v_t / self._v_0)
-        self._vV_t = vv_i
+        self._vV_t = vV_t
 
     def _vv_3d_(self,phi=0.,theta=0.):
         """
@@ -1130,7 +1133,7 @@ class Bullet(object):
           Meaning the vectors must be subtracted
           Because mFd in force.py is negative
         """
-        return -force.Fd(self) * (self._vV_t-vw) + force.gravity()
+        return force.Fd(self) * (self._vV_t-vw) + force.Fg()
 
     def _Q_(self,phi,theta,alpha,beta):
         """

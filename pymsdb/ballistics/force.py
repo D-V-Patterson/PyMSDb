@@ -42,7 +42,7 @@ import pymsdb.ballistics.atmosphere as atm
 
 #### GRAVITY
 
-def gravity():
+def Fg():
 	""" returns a xyz vector of gravity's affect given angle """
 	return -np.array([0.,atm.G,0.],np.double)
 
@@ -55,15 +55,16 @@ def Fd(blt,rho=atm.RHO):
 	:param blt: the Bullet object
 	:param rho: air density (kg/m3)
 	:return: magnitude of the force of drag
-	uses Fd = (-0.5 * Cd * rho * A) / mass
-	 McCoy 1999, Eq 5.7
+	uses McCoy 1999, Eq 9.10 - 9.16 (note add - to force of drag)
+	 Fd = rho * v * S * Cd / 2 * m
 	 where
-	  Cd = coefficient of drag,
-	  rho = air density
-	  A = cross-sectional area
-	  Fd in (m I think)
+	   rho = air density (kg/m^3),
+	   v = velocity magnitude (m/s),
+	   S = cross-sectional area (m^2),
+	   Cd = coefficient of drag,
+	   m = mass (kg)
 	"""
-	return (rho*blt.v_i*blt.A*blt.Cd()) / (2*blt.mass)
+	return -(rho*blt.v_t*blt.A*blt.Cd()) / (2*blt.mass)
 
 #### LIFT
 
@@ -83,7 +84,7 @@ def Fl(blt,rho=atm.RHO):
 	   Cl = coefficient of lift,
 	   m = mass (kg)
 	"""
-	return (rho*blt.v_i*blt.A*blt.Cl()) / (2*blt.mass)
+	return (rho*blt.v_t*blt.A*blt.Cl()) / (2*blt.mass)
 
 #### MAGNUS MOMENT
 
@@ -128,7 +129,7 @@ def Mpd(blt,rho=atm.RHO):
 	   Cmq, Cma = pitch damping coefficients, and
 	   Iy = transverse moment of inertia (radians/s)
 	"""
-	_1 = rho*blt.v_i*blt.A*np.power(blt.d*bls.MM2M,2)*sum(blt.Cmp())
+	_1 = rho*blt.v_t*blt.A*np.power(blt.d*bls.MM2M,2)*sum(blt.Cmp())
 	return _1 / (2*blt.Iy())
 
 def Mo(blt,rho=atm.RHO):
@@ -149,7 +150,7 @@ def Mo(blt,rho=atm.RHO):
 	   Cma = pitching moment coefficient, and
 	   Iy = transverse moment of inertia (radians/s)
 	"""
-	return (rho*blt.v_i*blt.A*(blt.d*bls.MM2M)*blt.Cmp()[0]) / (2*blt.Iy())
+	return (rho*blt.v_t*blt.A*(blt.d*bls.MM2M)*blt.Cmp()[0]) / (2*blt.Iy())
 
 #### CORIOLIS
 
@@ -169,11 +170,11 @@ def Ec(blt,lat=32.,az=90):
 	  L = latitude of firer (degrees), and
 	  AZ = azimuth of fire (degrees) due North = 0, east = 90
 	"""
+	vx,vy,vz = blt.vV_t
 	return 2*atm.OMEGA * np.array(
 		[
-			-blt.v_y*utils.sin(lat)*utils.sin(az) - blt.v_z*utils.sin(lat),
-			blt.v_x*utils.cos(lat)*utils.sin(az) +
-			blt.v_z*utils.cos(lat)*utils.cos(az),
-			blt.v_x*utils.sin(lat) - blt.v_y*utils.cos(lat)*utils.cos(az)
+			-vy*utils.sin(lat)*utils.sin(az) - vz*utils.sin(lat),
+			vx*utils.cos(lat)*utils.sin(az) + vz*utils.cos(lat)*utils.cos(az),
+			vx*utils.sin(lat) - vy*utils.cos(lat)*utils.cos(az)
 		],np.double
 	)
