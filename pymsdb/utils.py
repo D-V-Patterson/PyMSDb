@@ -70,7 +70,7 @@ def arcsin(x,xtype='d',rnd=3):
 def arctan(x,xtype='d',rnd=3):
     if xtype == 'd': x = d2r(x)
     elif xtype == 'm': x = m2r(x)
-    return np.round(np.arctansin(x),rnd)
+    return np.round(np.arctan(x),rnd)
 
 def percent_change(old,new): return (new-old) / old * 100
 
