@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """ bullet.py
 Copyright (C) 2020 Dale V. Patterson (dale.v.patterson@gmail.com)
-
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
@@ -13,7 +12,7 @@ Defines caliber dataset reading/writing and the Caliber class
 #__name__ = 'bullet'
 __license__ = 'GPLv3'
 __version__ = '0.1.7.2'
-__date__ = 'June 2021'
+__date__ = 'July 2021'
 __author__ = 'Dale Patterson'
 __maintainer__ = 'Dale Patterson'
 __email__ = 'dale.v.patterson@gmail.com'
@@ -51,6 +50,7 @@ TODO:
   equation
  25. When not specified by user, set barrel twist rate based on handgun or long gun
   type of ammo
+ 26. No longer using the ch 5 k constant drag coefficients 
 """
 
 class Bullet(object):
@@ -164,15 +164,15 @@ class Bullet(object):
         self._name = "{} ({}gr)".format(name,w)
         self._cd = cd
         self._sz = sz
-        self._d = np.double(d)
-        self._oal = np.double(clen)
-        self._oabl = np.double(blen) if blen else None
-        self._v_0 = np.double(v) # initial velocity magnitude
+        self._d = d
+        self._oal = clen
+        self._oabl = blen if blen else None
+        self._v_0 = v
         self._w = w
         self._cg = cg
-        self._m = np.double(self._w*bls.GR2KG)
-        self._A = np.pi*np.power((self.d*bls.MM2M)/2,2)
-        self._SD = self._m / np.power((self.d*bls.MM2M),2)
+        self._m = np.round(self._w*bls.GR2KG,6)
+        self._A = np.round(np.pi*np.power(self.d*bls.MM2M,2)/4,6)
+        self._SD = np.round(self._m / np.power(self.d*bls.MM2M,2),6)
 
         # create mass properties that can derived at initiation, properties that
         # are model dependent and variables for trajectory calculations
@@ -205,14 +205,12 @@ class Bullet(object):
         self._ss = []
 
         # position and velocity vectors are set to prior to fire, speeds are
-        # reset & spin rate is not a number
+        # reset. Bullet axes and  spin rate are undefined
         self._vP_0 = np.array([0.,0.,0.],np.double)
         self._vV_0 = np.array([0.,0.,0.],np.double)
         self._vP_t = np.array([0.,0.,0.],np.double)
         self._vV_t = np.array([0.,0.,0.],np.double)
-        self._vI = None
-        self._vJ = None
-        self._vK = None
+        self._vI = self._vJ = self._vK = np.nan
         self._v_t = self._v_0
         self._p_t = self._p_0 = np.nan
 
@@ -226,7 +224,7 @@ class Bullet(object):
     def v_0(self): return self._v_0 # initial/muzzle velocity
 
     @property
-    def v_i(self): return self._v_t # current velocity
+    def v_t(self): return self._v_t # current velocity
 
     @property
     def p_0(self): return self._p_0 # initial spin rate
@@ -253,10 +251,10 @@ class Bullet(object):
         self._mass_props_()
 
     @property
-    def position(self): return self._vP_t
+    def vP_t(self): return self._vP_t
 
     @property
-    def velocity(self): return self._vV_t
+    def vV_t(self): return self._vV_t
 
     @property
     def x_0(self): return self._vP_0[bls.IX] # initial horizontal position
@@ -275,24 +273,6 @@ class Bullet(object):
 
     @property
     def z(self): return self._vP_t[bls.IZ] # 'current' windage distance
-
-    @property
-    def v_x0(self): return self._vV_0[bls.IX]  # initial x-component of velocity
-
-    @property
-    def v_x(self): return self._vV_t[bls.IX] # 'current' x-component of velocity
-
-    @property
-    def v_y0(self): return self._vV_0[bls.IY]  # initial y-component of velocity
-
-    @property
-    def v_y(self): return self._vV_t[bls.IY] # 'current' y-component of velocity
-
-    @property
-    def v_z0(self): return self._vV_0[bls.IZ]  # initial x-component of velocity
-
-    @property
-    def v_z(self): return self._vV_t[bls.IZ] # 'current' x-component of velocity
 
     @property
     def weight(self): return self._w
@@ -366,11 +346,11 @@ class Bullet(object):
 #### CALCULABLE ATTRIBUTES
 # change w.r.t velocity etc
 
-    def ke(self): return self._m*np.power(self._v_t,2)*0.5
+    def ke(self): return np.round(self._m*np.power(self._v_t,2)*0.5,6)
 
-    def momentum(self): return self._m*self._v_t
+    def momentum(self): return np.round(self._m*self._v_t,6)
 
-    def mach(self): return atm.mach(self._v_t)
+    def mach(self): return np.round(atm.mach(self._v_t),6)
 
     def BC(self):
         """
@@ -394,8 +374,7 @@ class Bullet(object):
           See SD, the BC is in kg/m^2 whereas BCs are published by
            ft/in^2 - to convert this BC to imperial, divide by 703
         """
-        # TODO: these seem off
-        return self._m/(self.i()*np.power(self._d*bls.MM2M,2))
+        return np.round(self._m/(self.i()*np.power(self._d*bls.MM2M,2)),6)
 
     def i(self):
         """
@@ -409,7 +388,7 @@ class Bullet(object):
             v
         """
         try:
-            return self.Cd()/model.std_cd(self)
+            return np.round(self.Cd()/model.std_cd(self),6)
         except TypeError:
             raise BulletException("{} Cd is undefined".format(self._name))
 
@@ -419,7 +398,7 @@ class Bullet(object):
         :return: drag coefficient
         """
         try:
-            return self._hooke_cd_()
+            return np.round(self._hooke_cd_(),6)
         except TypeError: # shouldn't happen
             raise BulletException(
                 "{} velocity is undefined/invalid".format(self._name)
@@ -435,7 +414,7 @@ class Bullet(object):
           Cn = normal force coefficient slope, and
           Cd0 = zero-yaw drag coefficient
         """
-        return self.Cn() - self.Cd0()
+        return np.round(self.Cn() - self.Cd0(),6)
 
     def Cmp(self):
         """
@@ -467,9 +446,9 @@ class Bullet(object):
          from the base so we are not subtracting the xcg from the length
         """
         # since A is in m^2 and volume is in m^3 convert, xcg, d to meters
-        xcg = self._xcg*bls.MM2M                   # m
-        d = self._d*bls.MM2M                       # m
-        Sb = np.pi*np.power(self._db*bls.MM2M/2,2) # m^2
+        xcg = self._xcg*bls.MM2M                     # m
+        d = self._d*bls.MM2M                         # m
+        Sb = np.pi*np.power(self._db*bls.MM2M,2) / 4 # m^2
 
         # get the mach number (set to 0.5 if less than 0.5)
         M = self.mach()
@@ -488,8 +467,8 @@ class Bullet(object):
             fq = 1
 
         # calculate Cma
-        Cma = fa*_1
-        Cmq = (fq*_2) - Cma
+        Cma = np.round(fa*_1,6)
+        Cmq = np.round(fq*_2 - Cma,6)
         return Cma,Cmq
 
     def Cmm(self):
@@ -510,7 +489,9 @@ class Bullet(object):
         """
         M = self.mach()
         if M > 2.5: M = 2.5
-        return (M/2 - 1) * (self._oabl/(4*self._db)) * (self._xcg/self._d)
+        return np.round(
+            (M/2 - 1) * (self._oabl/(4*self._db)) * (self._xcg/self._d),6
+        )
 
     def Cn(self):
         """
@@ -528,7 +509,7 @@ class Bullet(object):
         # get mach and calculate factor (sqrt(M) if M > 1, 1 otherwise)
         M = self.mach()
         f = 1 if M < 1 else np.sqrt(M)
-        return f * np.sqrt(self._oabl/self._d) * (self._db/self._d)
+        return np.round(f*np.sqrt(self._oabl/self._d)*(self._db/self._d),6)
 
     def Cd0(self):
         """
@@ -543,7 +524,7 @@ class Bullet(object):
         """
         M = self.mach()
         _1 = np.sqrt(M) if M >= 1. else 3
-        return np.sqrt(self._d/self._oabl) / _1
+        return np.round(np.sqrt(self._d/self._oabl)/_1,6)
 
     def Sg(self,rho=atm.RHO):
         """
@@ -565,9 +546,9 @@ class Bullet(object):
           For 7.62x39 we get 7.66e-08
         """
         Cma = self.Cmp()[0]
-        return (np.power(self._Ix,2)*np.power(self._p_t,2)) / (
-                2*rho*self._Iy*self._A*(self._d*bls.MM2M)*np.power(self._v_t,2)*Cma
-        )
+        _1 = np.power(self._Ix,2)*np.power(self._p_t,2)
+        _2 = 2*rho*self._Iy*self._A*(self._d*bls.MM2M)*np.power(self._v_t,2)*Cma
+        return np.round(_1/_2,6)
 
     def Sd(self):
         """
@@ -586,7 +567,7 @@ class Bullet(object):
         d2 = np.power(self._d*bls.MM2M,2) # used multiple times
         _1 = 2 * (self.Cl() + ((self._m*d2)/(2*self._Ix)) * self.Cmm())
         _2 = self.Cl() - self.Cd0() - ((self._m*d2)/(2*self._Iy))*sum(self.Cmp())
-        return _1 / _2
+        return np.round(_1/_2,6)
 
     def dynamic_stability(self,rho=atm.RHO):
         """
@@ -667,24 +648,21 @@ class Bullet(object):
         :return: zero angle (degrees)
         NOTE: bullet should be reset/initial state
         """
-        # 1) use flat-fire trajectory with constant k to estimate rough za as
-        #    start point (McCoy 1999, Sec 5.5 pg 92), creating array of angles
-        #    from 0 to estimated za
-        # 2) interpolate the results of elevation using generated angles
-        # 3) use this to find the angle the puts us at the elevation of the
-        #    front sight post
-        # 4) in the event that the resulting angle does not give of us a
-        #    final destination close to 0, recalculate
-        # TODO: can't use fill_value='extrapolate', look at extrap1d
+        # create array of angles from 0 to 45 and interpolate the results of
+        # elevation using generated angles. use the interpolation to find the
+        # angle the puts us at the elevation of the front sight post
+        # TODO:
+        #  - can't use fill_value='extrapolate', look at extrap1d
+        #  - minimize the number of angles, thetas
         try:
-            thetas = np.linspace(0,self._za_k_(fs,x)[2],num=1000)
-            zs = interp1d(self.elevation(x,fs*bls.MM2M,thetas),thetas)
-            za = float(zs(fs*bls.MM2M))
+            fs *= bls.MM2M
+            thetas = np.linspace(0,45.,num=1000)
+            zs = interp1d(self.elevation(x,fs,thetas),thetas)
+            return np.round(zs(fs),6)
         except ValueError: # assuming caused by za = float(zs(fs*bls.MM2M))
             raise BulletException(
                 "{}: Interpolation error. Try resetting bullet".format(self._name)
             )
-        return za
 
     def tof(self,x,phi):
         """
@@ -699,8 +677,8 @@ class Bullet(object):
            v_x0 = calculated above (m/s), and
            v_0 = muzzle velocity (m/s)
         """
-        vx0 = self._vx_i_(phi)
-        return (x/vx0) * np.sqrt(vx0/self._vx_k3_(x,phi))
+        vx0 = self._vx_t_(phi)
+        return np.round((x/vx0) * np.sqrt(vx0/self._vx_k3_(x,phi)),6)
 
     def elevation(self,x,h,phi):
         """
@@ -723,10 +701,12 @@ class Bullet(object):
           vx0 = initial x-component of velocity at angle phi (m/s)
         """
         vx = self._vx_k3_(x,phi)
-        vx0 = self._vx_i_(phi)
+        vx0 = self._vx_t_(phi)
         t = self.tof(x,phi)
-        return h + (x*tan(phi)) - (0.5*atm.G*np.power(t,2)) * \
-               ((1 + (2*np.sqrt(vx/vx0)))/3)
+        return np.round(
+            h + (x*tan(phi)) -
+            (0.5*atm.G*np.power(t,2)) * ((1 + (2*np.sqrt(vx/vx0)))/3),6
+        )
 
     def fall_angle(self,x,phi):
         """
@@ -745,11 +725,11 @@ class Bullet(object):
           vx = x-component of velocity at distance x (m/s)
         """
         vx = self._vx_k3_(x,phi)
-        vx0 = self._vx_i_(phi)
+        vx0 = self._vx_t_(phi)
         t = self.tof(x,phi)
         tanp = tan(phi) - ((atm.G*t)/vx0) * \
                ((1/3) * (1 + np.sqrt(vx0/vx) + vx0/vx))
-        return r2d(arctan(tanp,'r'))
+        return np.round(r2d(arctan(tanp,'r')),6)
 
     def trajectory(self,dt=0.01,**kwargs):
         """
@@ -948,7 +928,7 @@ class Bullet(object):
         :return: the components of velocity as a array [vx,vy,vz]
         """
         return np.array(
-            [self._vx_i_(phi,theta),self._vy_i_(phi,theta),self._vz_i_(theta)],
+            [self._vx_t_(phi,theta),self._vy_t_(phi,theta),self._vz_t_(theta)],
             np.double
         )
 
@@ -997,7 +977,7 @@ class Bullet(object):
         # return
         return bx,by,bz
 
-    def _vx_i_(self,phi,theta=0.):
+    def _vx_t_(self,phi,theta=0.):
         """
         calculates the x component of current velocity at angle of fire phi
         and windage angle theta
@@ -1007,7 +987,7 @@ class Bullet(object):
         """
         return self._v_t*cos(phi)*cos(theta)
 
-    def _vy_i_(self,phi,theta=0.):
+    def _vy_t_(self,phi,theta=0.):
         """
         calculates the y component of current velocity at angle of fire phi
         and windage angle theta
@@ -1017,7 +997,7 @@ class Bullet(object):
         """
         return self._v_t*sin(phi)*cos(theta)
 
-    def _vz_i_(self,theta=0):
+    def _vz_t_(self,theta=0):
         """
         calculates the z component of current velocity at windage angle theta
         :param theta: angle of fire along the z-axis (windage)
@@ -1029,7 +1009,7 @@ class Bullet(object):
         """
         estimates the firing angle required to to zero at x using a constant
         drag coefficient k
-        :param fs: front sight height over center of bore (mm)
+        :param fs: front sight height over center of bore (m)
         :param x: desired zero distance (m)
         :return: vx,t,za
           vx = calculate x-component of velocity at distance x
@@ -1068,13 +1048,13 @@ class Bullet(object):
            m = mass (kg)
         """
         k = (atm.RHO * self.A) / (2 * self._m) * self.Cd()
-        v_x = self._v_0 * np.exp(-k*x)
-        t = ((x / self._v_0) * (self._v_0 / v_x - 1)) / np.log(self._v_0/v_x)
-        dv = self._v_0/v_x
-        _1 = np.power(dv-1,-1)
-        _2 = np.power(dv-1,-2) * np.log(dv)
-        za = arctan((fs*bls.MM2M+(0.5*atm.G*np.power(t,2)) * (0.5+_1-_2))/x,'r')
-        return v_x,t,r2d(za)
+        v_x = self._v_0 * np.exp(-k * x)
+        t = ((x / self._v_0) * (self._v_0 / v_x - 1)) / np.log(self._v_0 / v_x)
+        dv = self._v_0 / v_x
+        _1 = np.power(dv - 1, -1)
+        _2 = np.power(dv - 1, -2) * np.log(dv)
+        za = arctan((fs * bls.MM2M + (0.5 * atm.G * np.power(t, 2)) * (0.5 + _1 - _2)) / x, 'r')
+        return v_x, t, r2d(za)
 
     def _k3_(self):
         """
@@ -1111,7 +1091,7 @@ class Bullet(object):
            k3 = drag coefficient (see _k3_), and
            x = range to estimate (m)
         """
-        return np.power(np.sqrt(self._vx_i_(phi)) - (0.5*self._k3_()*x),2)
+        return np.power(np.sqrt(self._vx_t_(phi)) - (0.5*self._k3_()*x),2)
 
     def _va_(self,vw):
         """

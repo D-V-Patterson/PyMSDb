@@ -11,7 +11,7 @@ Top level directory for PyMDSb program files
  TODO
 
 Requirements
- - Python 3.x
+ - Python 3.x https://www.python.org
 
 External Dependencies
  - regex 2.5.93
@@ -20,12 +20,6 @@ External Dependencies
  - numpy 1.20.3
     https://numpy.org
     pip3 install numpy
- - numpy-quaternion 2021.4.5.14.42.35
-    https://pypi.org/project/numpy-quaternion/
-    pip3 install numpy-quaternion
- - numba 0.53.1
-    http://numba.pydata.org
-    pip3 intall numba
  - scipy 1.6.3
     https://www.scipy.org
     pip3 install scipy
