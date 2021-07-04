@@ -52,5 +52,5 @@ MMC2MC  = 1e-9  # mm^3 to m^3
 KG2G    = 1000  # kilogram to gram
 
 # metric to imperial
-msd2isd = 1/703  # sectional density (SD), ballistic coefficent (BC) to imperial
-ma2ia   = 1/1550 # cross-sectional area (A) to imperial
+SD2IMP  = 1/703  # sectional density (SD) & ballistic coefficent (BC) to imperial
+CSA2IMP = 1/1550 # cross-sectional area (A) to imperial
