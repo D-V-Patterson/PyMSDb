@@ -45,7 +45,7 @@ where
   shooter-data = (list of dicts) {age,gender,race,religion,education,military}
    where:
     age = age in years
-    gender = one of {M=male, F=female}
+    gender = one of {M=male, F=female, U=Unknown}
     race = one of {W=white, B=black, H=hispanic, A=asian,
                    E=Middle Eastern, N=Native, O=other,U=Uunknown}
     religion = {
@@ -247,7 +247,7 @@ tgt_c2l_loc = {'C':'Chosen','S':'Specific','R':'Random','U':'Unknown'}
 
 # shooter demographics is a string with a default/empty form of
 # age/gender/race/religion/education/military/criminal rec/mental health/subst. use
-# 0/M/U/U/0/U/U/U/U
+# 0/U/U/U/0/U/U/U/U
 
 # categories of demographics
 sht_demo_cat = [
@@ -257,7 +257,7 @@ sht_demo_cat = [
 
 # demographic code to labels
 sht_demo_c2l = {
-    'gender':{'M':'Male','F':'Female'},
+    'gender':{'M':'Male','F':'Female','U':'Unknown'},
     'race':{'W':'White','B':'Black','H':'Hispanic','A':'Asian',
             'E':'Middle Eastern','N':'Native','O':'Other','U':'Unknown'},
     'religion':{'C':'Christian','M':'Muslim','J':'Jewish','B':'Buddhist',
@@ -275,7 +275,7 @@ sht_demo_c2l = {
 
 # allowed values for each category
 # sht_demo_age = 0 to 100
-sht_demo_gender = ['M','F']
+sht_demo_gender = ['M','F','U']
 sht_demo_race = [k for k in sht_demo_c2l['race']]
 sht_demo_rel = [k for k in sht_demo_c2l['religion']]
 sht_demo_ed_lvl = [k for k in sht_demo_c2l['ed-lvl']]
