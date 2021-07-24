@@ -230,10 +230,11 @@ mtv_c2l = {
 # allowed target codes (two-character code <people><location>)
 # People:
 #  G = Group: a group for example coworkers, classmates etc associated with
-#    shooter or a demographic associated with shooter's ideology such as race
+#    shooter
 #  S = Specific: specific targets (by-name list)
 #  R = Random: generally in relation to violent ideology, shooters intent is to
 #   kill without regard to who to dies
+#  C = categorical, a demographic associated with shooter's ideology such as race
 #  U = Unknown: cannot determine
 # Location:
 #  C = Chosen: location has no association/ties w/ shooter, selected for
@@ -242,7 +243,9 @@ mtv_c2l = {
 #   or a demographic i.e. Mosque
 #  R = Random: generally in relation to an opportunistic or reactionary event
 #  U = Unknown: cannot determine
-tgt_c2l_tgt = {'G':'Group','S':'Specific','R':'Random','U':'Unknown'}
+tgt_c2l_tgt = {
+    'G':'Group','S':'Specific','R':'Random','C':'Categorical','U':'Unknown'
+}
 tgt_c2l_loc = {'C':'Chosen','S':'Specific','R':'Random','U':'Unknown'}
 
 # shooter demographics is a string with a default/empty form of
