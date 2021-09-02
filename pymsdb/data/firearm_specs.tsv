@@ -60,6 +60,7 @@ Walther	P22	P22		Pistol			SA	.22 LR	3.4	6.3	6.32	0.94	5-12	N/A	HG	blowback	1:16	
 Walther	P99	P99		Pistol			SA	9x19	4	7.1	7.1	1.38	8.4	N/A	HG	short-recoil, locked-breech	1:16					30	100	50		mag-well:btn-release:insert-lock	inside	15		
 Walther	PP	PP		Pistol			SA	.380 ACP	3.9	6.7	6.7	1.43	4.75-12.25	N/A	HG	straight-blowback	1:16									mag-well:btn-release:insert-lock	inside	7		
 Walther	PPS	PPS		Pistol			SA	9x19	3.2	6.32	6.32	1.21	6.1	N/A	HG											mag-well:btn-release:insert-lock	inside	6, 7, 8		
+Charter Arms	Police Undercover	Police Undercover		Revolver			SA	.38 Special	2.2	7.32	7.32	1.25		N/A	BH											cylinder:eject-rod-all:manual-chmbr,spd-loader	forward	6		Model #73840
 Röhm GmbH	RG10	RG10		Revolver			SA	.22 Short	2.87	6.6	6.8	0.78		N/A	HG											cylinder:eject-rod-all:manual-chmbr,spd-loader	forward	6		cannot find OAL specs on RG10, estimated using RG20
 Smith & Wesson	Model 29	Model 29		Revolver			SA	.44 Magnum, .44 Special	4	9.3	9.3	2.74	3.5-10	N/A	HG											cylinder:eject-rod-all:manual-chmbr,spd-loader	forward	6		
 Smith & Wesson	Model 36	Model 36		Revolver			SA	.38 S&W	1.88	6.94	6.94	1.22	7	N/A	HG		1:5									cylinder:eject-rod-all:manual-chmbr,spd-loader	forward	5		
